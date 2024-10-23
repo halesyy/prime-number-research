@@ -42,6 +42,11 @@ def fitness_of_eval(eq: Expression, results: list[float], primes: list[int]):
       cum_diff += diff
    return cum_diff
 
+def fitness_of_eval_safe(eq: Expression, results: list[float], primes: list[int]):
+   try:
+      return fitness_of_eval(eq, results, primes)
+   except:
+      return float("inf")
 
 def load_primes(count: int) -> list[int]:
    dataset_path = Path(f"datasets/primes_{count}.json")
@@ -67,11 +72,10 @@ def main():
          continue
 
       # Check fitness.
-      fitness = fitness_of_eval(ex, results, primes)
+      fitness = fitness_of_eval_safe(ex, results, primes)
       if fitness < lowest_fitness:
          lowest_fitness = fitness
          print(f"New lowest fitness: {lowest_fitness} with {ex} over {len(primes)} primes.")
-         print("---")
 
 if __name__ == "__main__":
    main()
