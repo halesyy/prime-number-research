@@ -6,9 +6,10 @@ from py_expression_eval import Parser, Expression
 import matplotlib.pyplot as plt
 
 Y_TESTS = [y/100 for y in range(500, 1000)] # by 1 from -10 to 10 for 20 tests
+Y_TESTS = [y for y in range(-10, 10)]
 # Y_TESTS = [6.84]
 X_INC = 1
-X_TIMES = 2
+X_TIMES = 1
 
 def eval_ex(eq: Expression, primes: list[int]):
    eq_str = str(eq)
@@ -142,4 +143,4 @@ def main():
 
 
 if __name__ == "__main__":
-   main()
+   fitness_miner()
