@@ -4,7 +4,7 @@ from pathlib import Path
 from primes.expressions.generator import parsed_expression_generator
 from py_expression_eval import Parser, Expression
 
-Y_TESTS = [y / 10 for y in range(-10000, 10000)] # by 0.1 from -1000 to 1000, 20,000 total tests
+Y_TESTS = [y for y in range(-10, 10)] # by 1 from -10 to 10 for 20 tests
 X_INC = 0
 
 def eval_ex(eq: Expression, primes: list[int]):
@@ -58,6 +58,7 @@ def load_primes(count: int) -> list[int]:
 def main():
    primes = load_primes(1229)
    lowest_fitness = float("inf")
+   tests = 0
 
    for ex in parsed_expression_generator():
       try:
@@ -73,9 +74,14 @@ def main():
 
       # Check fitness.
       fitness = fitness_of_eval_safe(ex, results, primes)
+      if fitness is None:
+         continue
+
+      tests += 1
       if fitness < lowest_fitness:
          lowest_fitness = fitness
-         print(f"New lowest fitness: {lowest_fitness} with {ex} over {len(primes)} primes.")
+         print(f"New lowest fitness: {lowest_fitness} with {ex} over {len(primes)} primes (tests: {tests}).")
+
 
 if __name__ == "__main__":
    main()
