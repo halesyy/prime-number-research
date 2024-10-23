@@ -6,31 +6,30 @@ from py_expression_eval import Parser, Expression
 parser = Parser()
 
 OPERATORS = [
-   "+",
+   "+", # 0
    "-",
-   "*",
+   "*", # 2
    "/",
    "^",
    "%"
 ]
 
 BRACKETS = [
-   "(",
+   "(", # 6
    ")"
 ]
 
 VARIABLES = [
-   "E",
+   "E", # 8
    "PI",
    "x"
 ]
 
 FUNCTIONS = [
-   "sin(x)",
+   "sin(x)", # 11
    "cos(x)",
    "tan(x)",
    "log(x, y)",
-   "ln(x)",
    "sqrt(x)",
    "exp(x)",
 ]
