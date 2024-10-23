@@ -22,11 +22,12 @@ BRACKETS = [
 VARIABLES = [
    "E", # 8
    "PI",
-   "x"
+   "x", # 10
+   "y"
 ]
 
 FUNCTIONS = [
-   "sin(x)", # 11
+   "sin(x)", # 12
    "cos(x)",
    "tan(x)",
    "log(x, y)",
@@ -34,7 +35,16 @@ FUNCTIONS = [
    "exp(x)",
 ]
 
+ERROROUS_ADDITIONS = [
+   "log", # 18
+   "sin",
+   "cos",
+   "," # 21
+]
+
 ALL_OPS = OPERATORS + BRACKETS + VARIABLES + FUNCTIONS
+ALL_OPS += ERROROUS_ADDITIONS
+
 ALL_OPS_IDS = list(range(len(ALL_OPS)))
 
 INDEX_OPS = {i: op for i, op in enumerate(ALL_OPS)}   

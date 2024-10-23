@@ -5,7 +5,7 @@ from primes.expressions.generator import parse_expression, parsed_expression_gen
 from py_expression_eval import Parser, Expression
 import matplotlib.pyplot as plt
 
-Y_TESTS = [y/100 for y in range(500, 1000)] # by 1 from -10 to 10 for 20 tests
+# Y_TESTS = [y/100 for y in range(500, 1000)] # by 1 from -10 to 10 for 20 tests
 Y_TESTS = [y for y in range(-10, 10)]
 # Y_TESTS = [6.84]
 X_INC = 1
@@ -97,9 +97,18 @@ def fitness_miner():
             print(f"New lowest fitness: {lowest_fitness} with {ex} (y={y_val}) over {len(primes)} primes (tests: {tests}).")
 
 def main():
-   primes = load_primes(1000000)
+   primes = load_primes(1229)
    # ex_str = supplement_ops([3.00, 2, 14])
-   ex_str = supplement_ops([10, 2, 14])
+   # ex_str = supplement_ops([10, 2, 14])
+   ex_str = supplement_ops(
+      [6, 2.00, 2, 10, 7] + # (2x)
+      [2] + # \*
+      [18, 6, 2.00, 2, 10, 21, 11, 7] 
+   )
+   print(ex_str)
+   # exit()
+   # ex_str = "(2*x)*log((x*2), y)"
+
    ex = parse_expression(ex_str)
    if ex is None:
       raise ValueError(f"Failed to parse expression: {ex_str}")
@@ -113,6 +122,8 @@ def main():
    best = fitnesses_sorted[0]
    print(best)
 
+   # exit()
+
    best_prime_results = [res for (y, res) in result_sets if y == best[0]][0]
    # plt.plot(range(len(primes)), primes, label="Primes")
    # plt.plot(range(len(primes)), best_prime_results, label="Best Fit")
@@ -122,12 +133,12 @@ def main():
    # plt.savefig("primes_vs_best_fit.png")
    # plt.show()
 
-   difference = [prime - result for prime, result in zip(primes, best_prime_results)]
-   plt.plot(range(len(primes)), difference)
-   plt.xlabel("Prime Number")
-   plt.ylabel("Difference")
-   plt.title("Difference Between Prime Numbers and Best Fit")
-   plt.savefig("difference.png")
+   # difference = [prime - result for prime, result in zip(primes, best_prime_results)]
+   # plt.plot(range(len(primes)), difference)
+   # plt.xlabel("Prime Number")
+   # plt.ylabel("Difference")
+   # plt.title("Difference Between Prime Numbers and Best Fit")
+   # plt.savefig("difference.png")
 
    # x_plot_vals = [y_val for y_val, _ in fitnesses if y_val is not None]
    # y_plot_vals = [fitness for _, fitness in fitnesses]
@@ -140,7 +151,9 @@ def main():
    # plt.savefig("y_vs_fitness.png")
    # plt.show()
 
-
+# Something that popped up:
+# (sqrt(x)+(((((x+sqrt(4.0))-8.0)/3.141592653589793)*log(x,y))*4.0)) (y=3) at x-step=1
 
 if __name__ == "__main__":
    fitness_miner()
+   # main()
