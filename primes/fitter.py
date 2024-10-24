@@ -47,6 +47,21 @@ def eval_ex_safe(eq: Expression, primes: list[int]):
    except:
       return None
 
+def eval_multivariate(eq: Expression, variables: dict[str, float], primes: list[int]):
+   """A chosen simpler function for evaluating, with user-provided mutlivariate in the
+   expression. E.g. sup x, y, c values separately."""
+   result_series: list[float] = []
+   for _ in primes:
+      result = eq.evaluate(variables)
+      result_series.append(result)
+   return result_series
+
+def eval_multivate_safe(eq: Expression, variables: dict[str, float], primes: list[int]):
+   try:
+      return eval_multivariate(eq, variables, primes)
+   except:
+      return None
+
 def fitness_of_eval(eq: Expression, results: list[float], primes: list[int]):
    """Here, we can do a lot due to this functional split - we can test
    the relative diff in the values, deep deltas, and much more. We can make
@@ -98,8 +113,50 @@ def fitness_miner():
             lowest_fitness = fitness
             print(f"New lowest fitness: {lowest_fitness} with {ex} (y={y_val}) over {len(primes)} primes (tests: {tests}).")
 
+def fit_multivariate_to_primes(eq: Expression, primes: list[int]) -> dict[str, float]:
+   return {}
+
+def main_multivariate_grouper_test():
+   # 1,000 prime groups.
+   primes = load_primes(1_000_000)
+   prime_groups = []
+   for i in range(0, len(primes), 1000):
+      prime_groups.append(primes[i:i+1000])
+
+   # Build the ex.
+   ex_mv_str = "((x*a)*log(x*b,y))"
+   ex = parse_expression(ex_mv_str)
+   if ex is None:
+      raise ValueError(f"Failed to parse expression: {ex_mv_str}")
+
+   # Each test:
+   # x = 1000 tests, diff deltas. For now just 1.
+   # y = (10-1) tests, from 1-10.
+   # a = (100-1) tests, from 1-100.
+   # b = 1 test (1 for now, constant).
+   # Total tests: 1000 * 9 * 99 * 1 = 891,000 tests.
+
+   best_fitness = float("inf")
+   tests = 0
+
+   # Test the multivariate.
+   for x in range(1, 1000):
+      for y in range(1, 10):
+         for a in range(1, 100):
+            b = 1
+            variables: dict[str, float] = { "x": x, "y": y, "a": a, "b": b }
+            results = eval_multivate_safe(ex, variables, primes)
+            if results is None:
+               continue
+            fitness = fitness_of_eval_safe(ex, results, primes)
+            tests += 1
+            if fitness < best_fitness:
+               best_fitness = fitness
+               print(f"New best fitness: {best_fitness} with {ex_mv_str} over {len(primes)} primes (tests: {x}, {y}, {a}, {b}) for primes starting from {primes[0]} (tests: {tests})")
+
+
 def main():
-   primes = load_primes(1_000_000)[0:250]
+   primes = load_primes(1_000_000)
    # ex_str = supplement_ops([3.00, 2, 14])
    # ex_str = supplement_ops([10, 2, 14])
    # ex_str = "((x*sin(sin(1.1717823427685636)))*log(x,y))"
@@ -110,6 +167,13 @@ def main():
    #    [2] + # \*
    #    [18, 6, 2.00, 2, 10, 21, 11, 7] # (log((2*x), y))
    # )
+
+   
+
+   # Multivariate for a, b, x, y - a/b are constants, and x,y are runtime variables.
+
+   exit()
+
 
    print(ex_str)
 
@@ -178,4 +242,5 @@ def main():
 
 if __name__ == "__main__":
    # fitness_miner()
-   main()
+   # main()
+   main_multivariate_grouper_test()
