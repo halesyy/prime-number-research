@@ -5,9 +5,11 @@ from primes.expressions.generator import parse_expression, parsed_expression_gen
 from py_expression_eval import Parser, Expression
 import matplotlib.pyplot as plt
 
-# Y_TESTS = [y/100 for y in range(500, 1000)] # by 1 from -10 to 10 for 20 tests
-Y_TESTS = [y for y in range(-10, 10)]
-# Y_TESTS = [6.84]
+Y_TESTS = [y/1000000 for y in range(2000000, 2100000)] # by 1 from -10 to 10 for 20 tests
+Y_TESTS = [2.002564] # for sinusoidal graph
+# Y_TESTS = [6.84] # for 2x * log(2x, y)s
+
+# Y_TESTS = [y for y in range(-10, 10)]
 X_INC = 1
 X_TIMES = 1
 
@@ -97,15 +99,19 @@ def fitness_miner():
             print(f"New lowest fitness: {lowest_fitness} with {ex} (y={y_val}) over {len(primes)} primes (tests: {tests}).")
 
 def main():
-   primes = load_primes(1229)
+   primes = load_primes(1_000_000)
    # ex_str = supplement_ops([3.00, 2, 14])
    # ex_str = supplement_ops([10, 2, 14])
-   ex_str = supplement_ops(
-      [6, 2.00, 2, 10, 7] + # (2x)
-      [2] + # \*
-      [18, 6, 2.00, 2, 10, 21, 11, 7] 
-   )
+   # ex_str = "((x*sin(sin(1.1717823427685636)))*log(x,y))"
+   ex_str = "((x*0.7964759083371821)*log(x,y))"
+   # ex_str = supplement_ops(
+   #    [6, 2.00, 2, 10, 7] + # (2x)
+   #    [2] + # \*
+   #    [18, 6, 2.00, 2, 10, 21, 11, 7] # (log((2*x), y))
+   # )
+
    print(ex_str)
+
    # exit()
    # ex_str = "(2*x)*log((x*2), y)"
 
@@ -125,24 +131,27 @@ def main():
    # exit()
 
    best_prime_results = [res for (y, res) in result_sets if y == best[0]][0]
-   # plt.plot(range(len(primes)), primes, label="Primes")
-   # plt.plot(range(len(primes)), best_prime_results, label="Best Fit")
-   # plt.xlabel("Prime Number")
-   # plt.ylabel("Value")
-   # plt.title("Prime Numbers vs. Best Fit")
-   # plt.savefig("primes_vs_best_fit.png")
-   # plt.show()
 
-   # difference = [prime - result for prime, result in zip(primes, best_prime_results)]
-   # plt.plot(range(len(primes)), difference)
-   # plt.xlabel("Prime Number")
-   # plt.ylabel("Difference")
-   # plt.title("Difference Between Prime Numbers and Best Fit")
-   # plt.savefig("difference.png")
+   # ? Prime numbers vs best fit plot.
+   plt.plot(range(len(primes)), primes, label="Primes")
+   plt.plot(range(len(primes)), best_prime_results, label="Best Fit")
+   plt.xlabel("Prime Number")
+   plt.ylabel("Value")
+   plt.title("Prime Numbers vs. Best Fit")
+   plt.savefig("primes_vs_best_fit.png")
+   plt.show()
 
+   # ? Difference plot.
+   difference = [prime - result for prime, result in zip(primes, best_prime_results)]
+   plt.plot(range(len(primes)), difference)
+   plt.xlabel("Prime Number")
+   plt.ylabel("Difference")
+   plt.title("Difference Between Prime Numbers and Best Fit")
+   plt.savefig("difference.png")
+
+   # ? Fitness plot over the various Y values.
    # x_plot_vals = [y_val for y_val, _ in fitnesses if y_val is not None]
    # y_plot_vals = [fitness for _, fitness in fitnesses]
-
    # plt.plot(x_plot_vals, y_plot_vals)
    # plt.xlabel("Y Value")
    # plt.ylabel("Fitness")
@@ -155,5 +164,5 @@ def main():
 # (sqrt(x)+(((((x+sqrt(4.0))-8.0)/3.141592653589793)*log(x,y))*4.0)) (y=3) at x-step=1
 
 if __name__ == "__main__":
-   fitness_miner()
-   # main()
+   # fitness_miner()
+   main()

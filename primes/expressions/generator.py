@@ -53,7 +53,8 @@ LEFT_BRACKET_OP = [i for i, op in INDEX_OPS.items() if op == "("][0]
 RIGHT_BRACKET_OP = [i for i, op in INDEX_OPS.items() if op == ")"][0]
 
 def generate_expression_ops():
-   length = randint(1, 100)
+   # length = randint(1, 100)
+   length = randint(1, 25)
    ops: list[int | float] = []
 
    for _ in range(length):
