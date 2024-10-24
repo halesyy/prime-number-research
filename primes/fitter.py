@@ -1,6 +1,8 @@
 
+from copy import deepcopy
 import json
 from pathlib import Path
+from time import perf_counter
 from primes.expressions.generator import parse_expression, parsed_expression_generator, supplement_ops
 from py_expression_eval import Parser, Expression
 import matplotlib.pyplot as plt
@@ -47,12 +49,13 @@ def eval_ex_safe(eq: Expression, primes: list[int]):
    except:
       return None
 
-def eval_multivariate(eq: Expression, variables: dict[str, float], primes: list[int]):
+def eval_multivariate(eq: Expression, variables: dict[str, float], primes: list[int]) -> float | None:
    """A chosen simpler function for evaluating, with user-provided mutlivariate in the
    expression. E.g. sup x, y, c values separately."""
-   result_series: list[float] = []
+   # result_series: list[float] = []
+   result = eq.evaluate(variables)
+   return result
    for _ in primes:
-      result = eq.evaluate(variables)
       result_series.append(result)
    return result_series
 
@@ -119,6 +122,7 @@ def fit_multivariate_to_primes(eq: Expression, primes: list[int]) -> dict[str, f
 def main_multivariate_grouper_test():
    # 1,000 prime groups.
    primes = load_primes(1_000_000)
+
    prime_groups = []
    for i in range(0, len(primes), 1000):
       prime_groups.append(primes[i:i+1000])
@@ -136,23 +140,58 @@ def main_multivariate_grouper_test():
    # b = 1 test (1 for now, constant).
    # Total tests: 1000 * 9 * 99 * 1 = 891,000 tests.
 
+   # Theoretically, we should get a best at:
+   # y=2 (possible)
+   # a=1 (possible)
+
+   # In reality, at 1 intervals, it was y=6, a=2, b=1, at fitness 102822.2654838793. (~10 seconds)
+   
+   # At 0.1 intervals, it is y=4.8, a=1.8, b=1 (~120 seconds)
+   # - best was: y=4.8, a=1.8, b=1 for fitness of 9914.930002572783.
+   # - 2nd best was y=4.4, a=1.8, b=1.
+   
+   # At 0.001 intervals, it is approx 5 hours to complete the group.
+   # Tiny improvement at y=4.97, a=1.84, b=1.
+
+   # Then, adjusting b, we get:
+   # 
+
+   # I will now try with more precision, since it worked fast.
+   primes = prime_groups[0]
+   x_start = 1
+   x_end = x_start + 1000
+
+   start = perf_counter()
+
    best_fitness = float("inf")
    tests = 0
 
    # Test the multivariate.
-   for x in range(1, 1000):
-      for y in range(1, 10):
-         for a in range(1, 100):
-            b = 1
-            variables: dict[str, float] = { "x": x, "y": y, "a": a, "b": b }
-            results = eval_multivate_safe(ex, variables, primes)
-            if results is None:
-               continue
-            fitness = fitness_of_eval_safe(ex, results, primes)
-            tests += 1
-            if fitness < best_fitness:
-               best_fitness = fitness
-               print(f"New best fitness: {best_fitness} with {ex_mv_str} over {len(primes)} primes (tests: {x}, {y}, {a}, {b}) for primes starting from {primes[0]} (tests: {tests})")
+   for y in range(400, 500+1):
+      y = y / 100
+      # print(f"y={y} ({perf_counter() - start:.2f}s)")
+      for a in range(100, 300+1):
+         a = a / 100
+         for b in range(1, 30):
+            b = b / 10
+            results: list[float] = []
+            for x in range(x_start, x_end):
+               variables: dict[str, float] = { "x": x, "y": y, "a": a, "b": b }
+               # print(variables)
+               result = eval_multivate_safe(ex, variables, primes)
+               if result is None:
+                  break # Stop x-iter - this one sucks.
+               results.append(result)
+            else:
+               if len(results) == 0:
+                  continue
+               fitness = fitness_of_eval_safe(ex, results, primes)
+               tests += 1
+               if fitness < best_fitness:
+                  best_fitness = fitness
+                  print(f"New best fitness: {best_fitness} with {ex_mv_str} over {len(primes)} primes (tests: y={y}, a={a}, b={b}) for primes starting from {primes[0]} (x {x_start} -> {x_end}) (tests: {tests})")
+
+   print(f"Finished in {perf_counter() - start:.2f} seconds.")
 
 
 def main():
