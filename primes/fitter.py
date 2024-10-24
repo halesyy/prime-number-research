@@ -103,7 +103,8 @@ def main():
    # ex_str = supplement_ops([3.00, 2, 14])
    # ex_str = supplement_ops([10, 2, 14])
    # ex_str = "((x*sin(sin(1.1717823427685636)))*log(x,y))"
-   ex_str = "((x*0.7964759083371821)*log(x,y))"
+   # ex_str = "((x*0.7964759083371821)*log(x,y))"
+   ex_str = "((x*0.7855)*log(x,y))"
    # ex_str = supplement_ops(
    #    [6, 2.00, 2, 10, 7] + # (2x)
    #    [2] + # \*
@@ -133,13 +134,13 @@ def main():
    best_prime_results = [res for (y, res) in result_sets if y == best[0]][0]
 
    # ? Prime numbers vs best fit plot.
-   plt.plot(range(len(primes)), primes, label="Primes")
-   plt.plot(range(len(primes)), best_prime_results, label="Best Fit")
-   plt.xlabel("Prime Number")
-   plt.ylabel("Value")
-   plt.title("Prime Numbers vs. Best Fit")
-   plt.savefig("primes_vs_best_fit.png")
-   plt.show()
+   # plt.plot(range(len(primes)), primes, label="Primes")
+   # plt.plot(range(len(primes)), best_prime_results, label="Best Fit")
+   # plt.xlabel("Prime Number")
+   # plt.ylabel("Value")
+   # plt.title("Prime Numbers vs. Best Fit")
+   # plt.savefig("primes_vs_best_fit.png")
+   # plt.show()
 
    # ? Difference plot.
    difference = [prime - result for prime, result in zip(primes, best_prime_results)]
