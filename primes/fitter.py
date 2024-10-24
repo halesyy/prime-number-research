@@ -154,11 +154,14 @@ def main_multivariate_grouper_test():
    # Tiny improvement at y=4.97, a=1.84, b=1.
 
    # Then, adjusting b, we get:
+   # y=4.08, x-step=1, a=1.57, b=1.2 = 9024 fitness over first 1,000
+   
+   # For second group, best fit at iter 0.10, is:
    # 
 
    # I will now try with more precision, since it worked fast.
-   primes = prime_groups[0]
-   x_start = 1
+   primes = prime_groups[1]
+   x_start = 1001
    x_end = x_start + 1000
 
    start = perf_counter()
@@ -167,13 +170,13 @@ def main_multivariate_grouper_test():
    tests = 0
 
    # Test the multivariate.
-   for y in range(400, 500+1):
-      y = y / 100
+   for y in range(1, 1000+1):
+      y = y / 10
       # print(f"y={y} ({perf_counter() - start:.2f}s)")
-      for a in range(100, 300+1):
-         a = a / 100
-         for b in range(1, 30):
-            b = b / 10
+      for a in range(1, 1000+1):
+         a = a / 10
+         for b in range(1, 2):
+            # b = b / 10
             results: list[float] = []
             for x in range(x_start, x_end):
                variables: dict[str, float] = { "x": x, "y": y, "a": a, "b": b }
