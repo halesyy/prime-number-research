@@ -99,7 +99,7 @@ def fitness_miner():
             print(f"New lowest fitness: {lowest_fitness} with {ex} (y={y_val}) over {len(primes)} primes (tests: {tests}).")
 
 def main():
-   primes = load_primes(1_000_000)
+   primes = load_primes(1_000_000)[0:250]
    # ex_str = supplement_ops([3.00, 2, 14])
    # ex_str = supplement_ops([10, 2, 14])
    # ex_str = "((x*sin(sin(1.1717823427685636)))*log(x,y))"
@@ -144,11 +144,23 @@ def main():
 
    # ? Difference plot.
    difference = [prime - result for prime, result in zip(primes, best_prime_results)]
-   plt.plot(range(len(primes)), difference)
+   # plt.plot(range(len(primes)), difference)
+   # plt.xlabel("Prime Number")
+   # plt.ylabel("Difference")
+   # plt.title("Difference Between Prime Numbers and Best Fit")
+   # plt.savefig("difference.png")
+
+   difference_delta = []
+   for i in range(1, len(difference)):
+      delta = difference[i] - difference[i - 1]
+      difference_delta.append(delta)
+   plt.plot(range(len(difference_delta)), difference_delta)
    plt.xlabel("Prime Number")
-   plt.ylabel("Difference")
-   plt.title("Difference Between Prime Numbers and Best Fit")
-   plt.savefig("difference.png")
+   plt.ylabel("Difference Delta (Log View)")
+   plt.yscale("log")
+   plt.title("Difference Delta Between Prime Numbers and Best Fit")
+   # plt.savefig("difference_delta_log_y.png")
+   plt.show()
 
    # ? Fitness plot over the various Y values.
    # x_plot_vals = [y_val for y_val, _ in fitnesses if y_val is not None]
