@@ -119,9 +119,13 @@ def fitness_miner():
 def fit_multivariate_to_primes(eq: Expression, primes: list[int]) -> dict[str, float]:
    return {}
 
+def better_range(start: float, end: float, step: float):
+   while start <= end:
+      yield start
+      start += step
+
 def main_multivariate_grouper_test():
-   # 1,000 prime groups.
-   primes = load_primes(1_000_000)
+   primes = load_primes(1_000_000) # upto 1,000,000 = 73k primes
 
    prime_groups = []
    for i in range(0, len(primes), 1000):
@@ -133,52 +137,61 @@ def main_multivariate_grouper_test():
    if ex is None:
       raise ValueError(f"Failed to parse expression: {ex_mv_str}")
 
-   # Each test:
-   # x = 1000 tests, diff deltas. For now just 1.
-   # y = (10-1) tests, from 1-10.
-   # a = (100-1) tests, from 1-100.
-   # b = 1 test (1 for now, constant).
-   # Total tests: 1000 * 9 * 99 * 1 = 891,000 tests.
-
-   # Theoretically, we should get a best at:
-   # y=2 (possible)
-   # a=1 (possible)
-
-   # In reality, at 1 intervals, it was y=6, a=2, b=1, at fitness 102822.2654838793. (~10 seconds)
-   
-   # At 0.1 intervals, it is y=4.8, a=1.8, b=1 (~120 seconds)
-   # - best was: y=4.8, a=1.8, b=1 for fitness of 9914.930002572783.
-   # - 2nd best was y=4.4, a=1.8, b=1.
-   
-   # At 0.001 intervals, it is approx 5 hours to complete the group.
-   # Tiny improvement at y=4.97, a=1.84, b=1.
-
-   # Then, adjusting b, we get:
-   # y=4.08, x-step=1, a=1.57, b=1.2 = 9024 fitness over first 1,000
-   
-   # For second group, best fit at iter 0.10, is:
-   # 
-
    # I will now try with more precision, since it worked fast.
-   primes = prime_groups[1]
-   x_start = 1001
-   x_end = x_start + 1000
+   TESTING_GROUP = 1000
+   TESTING_PRIME = 1000
+   # primes = prime_groups[TESTING_GROUP]
+   primes = [primes[TESTING_PRIME]]
+   x_start = (TESTING_GROUP * 1) + 1 # from 1 -> 1001 for first 1,000 since we do +1 offset
+   x_end = x_start + 1
+   
+
+   if isinstance(TESTING_PRIME, int):
+      print(f"Testing prime: {primes[0]}")
+      print(f"X: {x_start} -> {x_end}")
+
+   # 0 (tests: y=4.40, a=1.70, b=1.00): 9923.476361182746
+   # 0 (tests: y=4.80, a=1.80, b=1.00): 9914.930002572797
+   # 0 (tests: y=14.90, a=3.10, b=1.00): 9913.959767868972
+   # 0 
+
+   # 1 (tests: y=36.00, a=4.10, b=1.00): 22082.09106730225
+   # 1 (tests: y=27.70, a=3.80, b=1.00): 22089.533493481307
+   # ...
+   # 1 (tests: y=3.40, a=1.40, b=1.00): 22117.388521328798
+
+   # 2 (tests: y=36.20, a=4.10, b=1.00): 27954.44461572256
+   # 2 (tests: y=11.60, a=2.80, b=1.00): 27956.97672080946
+   # 2 (tests: y=2.40, a=1.00, b=1.00): 28027.61680498704
+
+   # 3 (tests: y=2.20, a=0.90, b=1.00): 36412.67156954958
+
+   # Precision: (of prime index, i.e. 0 = 1st prime)
+   # P(10) = (tests: y=5.70, a=1.75, b=1.50): 0.0058811326202068415
+   # P(11) = (tests: y=3.35, a=1.50, b=1.00): 0.002657737944083749
+   # P(11) = (tests: y=7.50, a=2.50, b=1.00): 0.0020905554166930074
+   # P(12) = (tests: y=4.15, a=1.75, b=1.00): 0.003623180455818442
+   # P(13) = (tests: y=9.30, a=2.25, b=1.50): 0.005308298206934126
+   # P(14) = (tests: y=9.35, a=2.25, b=1.50): 0.008255232179330108
+   # P(15) = (tests: y=8.10, a=2.00, b=2.00): 0.01661370892746561
+   # P(15) = (tests: y=8.10, a=2.50, b=1.00): 0.016613708927458504
+   # P(100) = (tests: y=4.35, a=1.50, b=2.00): 0.011133964902114712
+
+   # P(1000) = (tests: y=3.70, a=1.50, b=1.00): 1.7893304667486518
+   # P(1000) = (tests: y=1.81, a=0.56, b=4.40): 0.00350896508734877
+   # P(1000) = (tests: y=6.48, a=1.75, b=4.70): 0.0033839474244814483
+   # P(1000) = (tests: y=8.54, a=2.22, b=2.10): 0.00025320308122900315
 
    start = perf_counter()
 
    best_fitness = float("inf")
    tests = 0
 
-   # Test the multivariate.
-   for y in range(1, 1000+1):
-      y = y / 10
-      # print(f"y={y} ({perf_counter() - start:.2f}s)")
-      for a in range(1, 1000+1):
-         a = a / 10
-         for b in range(1, 2):
-            # b = b / 10
+   for y in better_range(0, 10, 0.01):
+      for a in better_range(0, 10, 0.01):
+         for b in better_range(1, 5, 0.10):
             results: list[float] = []
-            for x in range(x_start, x_end):
+            for x in better_range(x_start, x_end, 1):
                variables: dict[str, float] = { "x": x, "y": y, "a": a, "b": b }
                # print(variables)
                result = eval_multivate_safe(ex, variables, primes)
@@ -192,10 +205,9 @@ def main_multivariate_grouper_test():
                tests += 1
                if fitness < best_fitness:
                   best_fitness = fitness
-                  print(f"New best fitness: {best_fitness} with {ex_mv_str} over {len(primes)} primes (tests: y={y}, a={a}, b={b}) for primes starting from {primes[0]} (x {x_start} -> {x_end}) (tests: {tests})")
+                  print(f"New best fitness: {best_fitness} with {ex_mv_str} over {len(primes)} primes (tests: y={y:.2f}, a={a:.2f}, b={b:.2f}) for primes starting from {primes[0]} (x {x_start} -> {x_end}) (tests: {tests})")
 
    print(f"Finished in {perf_counter() - start:.2f} seconds.")
-
 
 def main():
    primes = load_primes(1_000_000)
