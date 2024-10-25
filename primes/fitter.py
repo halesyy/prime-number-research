@@ -188,9 +188,12 @@ def main_multivariate_grouper_test():
    tests = 0
 
    for y in better_range(0, 10, 0.00001):
+   # for y in better_range(7, 7, 1):
       # for a in better_range(0, 10, 0.01):
+      # for a in better_range(2, 3, 0.000001):
       for a in better_range(1, 1, 1):
          for b in better_range(1, 1, 1):
+         # for b in better_range(0, 5200, 0.001):
             results: list[float] = []
             for x in better_range(x_start, x_end, 1):
                variables: dict[str, float] = { "x": x, "y": y, "a": a, "b": b }
