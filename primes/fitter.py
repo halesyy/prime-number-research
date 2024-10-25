@@ -187,9 +187,10 @@ def main_multivariate_grouper_test():
    best_fitness = float("inf")
    tests = 0
 
-   for y in better_range(0, 10, 0.01):
-      for a in better_range(0, 10, 0.01):
-         for b in better_range(1, 5, 0.10):
+   for y in better_range(0, 10, 0.00001):
+      # for a in better_range(0, 10, 0.01):
+      for a in better_range(1, 1, 1):
+         for b in better_range(1, 1, 1):
             results: list[float] = []
             for x in better_range(x_start, x_end, 1):
                variables: dict[str, float] = { "x": x, "y": y, "a": a, "b": b }
@@ -205,7 +206,7 @@ def main_multivariate_grouper_test():
                tests += 1
                if fitness < best_fitness:
                   best_fitness = fitness
-                  print(f"New best fitness: {best_fitness} with {ex_mv_str} over {len(primes)} primes (tests: y={y:.2f}, a={a:.2f}, b={b:.2f}) for primes starting from {primes[0]} (x {x_start} -> {x_end}) (tests: {tests})")
+                  print(f"New best fitness: {best_fitness} with {ex_mv_str} over {len(primes)} primes (tests: y={y:.6f}, a={a:.6f}, b={b:.6f}) for primes starting from {primes[0]} (x {x_start} -> {x_end}) (tests: {tests})")
 
    print(f"Finished in {perf_counter() - start:.2f} seconds.")
 
