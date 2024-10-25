@@ -16,14 +16,17 @@ class PrimeFitnesses(BaseModel):
    fittest_y: float = float("inf")
    fittest_y_range: tuple[float, float] = (float("inf"), float("inf"))
    fit_y_count: int = 0
+   best_y_fitness: float = float("inf")
 
    fittest_a: float = float("inf")
    fittest_a_range: tuple[float, float] = (float("inf"), float("inf"))
    fit_a_count: int = 0
+   best_a_fitness: float = float("inf")
 
    fittest_b: float = float("inf")
    fittest_b_range: tuple[float, float] = (float("inf"), float("inf"))
    fit_b_count: int = 0
+   best_b_fitness: float = float("inf")
 
 def y_a_b_generator(
    y_delta: float, 
@@ -72,6 +75,7 @@ def precision_mine_prime(ex: Expression, n: int, prime: int):
    prime_fitness.fittest_y = best_y
    prime_fitness.fittest_y_range = (min(fit_y_vals), max(fit_y_vals)) if len(fit_y_vals) > 0 else (float("inf"), float("inf"))
    prime_fitness.fit_y_count = len(fit_y_vals)
+   prime_fitness.best_y_fitness = best_y_fitness
 
    # Testing A.
    for y in better_range(7, 7, 1):
@@ -94,6 +98,7 @@ def precision_mine_prime(ex: Expression, n: int, prime: int):
    prime_fitness.fittest_a = best_a
    prime_fitness.fittest_a_range = (min(fit_a_vals), max(fit_a_vals)) if len(fit_a_vals) > 0 else (float("inf"), float("inf"))
    prime_fitness.fit_a_count = len(fit_a_vals)
+   prime_fitness.best_a_fitness = best_a_fitness
 
    # Testing B.
    for y in better_range(7, 7, 1):
@@ -112,6 +117,11 @@ def precision_mine_prime(ex: Expression, n: int, prime: int):
             if fitness < best_b_fitness:
                best_b = b
                best_b_fitness = fitness
+
+   prime_fitness.fittest_b = best_b
+   prime_fitness.fittest_b_range = (min(fit_b_vals), max(fit_b_vals)) if len(fit_b_vals) > 0 else (float("inf"), float("inf"))
+   prime_fitness.fit_b_count = len(fit_b_vals)
+   prime_fitness.best_b_fitness = best_b_fitness
 
    return prime_fitness
 
