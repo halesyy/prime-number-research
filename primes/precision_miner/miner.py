@@ -62,7 +62,7 @@ def precision_mine_prime(ex: Expression, n: int, prime: int):
             try:
                predicted_result = eval_multivariate(ex, variables)
             except:
-               break   
+               continue   
             if predicted_result is None:
                raise ValueError(f"Failed to evaluate expression {ex} with variables {variables}")
             fitness = abs(prime - predicted_result)
@@ -85,7 +85,7 @@ def precision_mine_prime(ex: Expression, n: int, prime: int):
             try:
                predicted_result = eval_multivariate(ex, variables)
             except:
-               break   
+               continue   
             if predicted_result is None:
                raise ValueError(f"Failed to evaluate expression {ex} with variables {variables}")
             fitness = abs(prime - predicted_result)
@@ -103,12 +103,12 @@ def precision_mine_prime(ex: Expression, n: int, prime: int):
    # Testing B.
    for y in better_range(7, 7, 1):
       for a in better_range(1, 1, 1):
-         for b in better_range(0, 100_000, 0.1):
+         for b in better_range(0, 100000, 1):
             variables: dict[str, float] = { "x": n, "y": y, "a": a, "b": b }
             try:
                predicted_result = eval_multivariate(ex, variables)
             except:
-               break   
+               continue   
             if predicted_result is None:
                raise ValueError(f"Failed to evaluate expression {ex} with variables {variables}")
             fitness = abs(prime - predicted_result)
