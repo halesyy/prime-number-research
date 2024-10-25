@@ -1,11 +1,10 @@
 
-from copy import deepcopy
-import json
-from pathlib import Path
 from time import perf_counter
 from primes.expressions.generator import parse_expression, parsed_expression_generator, supplement_ops
 from py_expression_eval import Parser, Expression
 import matplotlib.pyplot as plt
+
+from primes.utils import better_range, load_primes
 
 Y_TESTS = [y/1000000 for y in range(2000000, 2100000)] # by 1 from -10 to 10 for 20 tests
 Y_TESTS = [2.002564] # for sinusoidal graph
@@ -49,19 +48,16 @@ def eval_ex_safe(eq: Expression, primes: list[int]):
    except:
       return None
 
-def eval_multivariate(eq: Expression, variables: dict[str, float], primes: list[int]) -> float | None:
+def eval_multivariate(eq: Expression, variables: dict[str, float]) -> float | None:
    """A chosen simpler function for evaluating, with user-provided mutlivariate in the
    expression. E.g. sup x, y, c values separately."""
    # result_series: list[float] = []
    result = eq.evaluate(variables)
    return result
-   for _ in primes:
-      result_series.append(result)
-   return result_series
 
 def eval_multivate_safe(eq: Expression, variables: dict[str, float], primes: list[int]):
    try:
-      return eval_multivariate(eq, variables, primes)
+      return eval_multivariate(eq, variables)
    except:
       return None
 
@@ -80,13 +76,6 @@ def fitness_of_eval_safe(eq: Expression, results: list[float], primes: list[int]
       return fitness_of_eval(eq, results, primes)
    except:
       return float("inf")
-
-def load_primes(count: int) -> list[int]:
-   dataset_path = Path(f"datasets/primes_{count}.json")
-   if not dataset_path.exists():
-      raise FileNotFoundError(f"Dataset not found at {dataset_path}")
-   with open(dataset_path, "r") as f:
-      return json.load(f)
 
 def fitness_miner():
    primes = load_primes(1229)
@@ -118,11 +107,6 @@ def fitness_miner():
 
 def fit_multivariate_to_primes(eq: Expression, primes: list[int]) -> dict[str, float]:
    return {}
-
-def better_range(start: float, end: float, step: float):
-   while start <= end:
-      yield start
-      start += step
 
 def main_multivariate_grouper_test():
    primes = load_primes(1_000_000) # upto 1,000,000 = 73k primes
