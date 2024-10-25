@@ -126,10 +126,12 @@ def precision_mine_prime(ex: Expression, n: int, prime: int):
    return prime_fitness
 
 def main():
-   primes = load_primes_from_path(Path(f"../datasets/primes_1229.json"))
+   primes = load_primes_from_path(Path(f"../datasets/primes_1000000.json"))
    ex = load_x_log_x_y_ex() # "((x*a)*log(x*b,y))"
    print(ex)
    for i, prime in enumerate(primes):
+      if prime < 1087:
+         continue
       prime_precision = precision_mine_prime(ex, i+1, prime)
       open(f"prime_stats/{prime}.json", "w").write(prime_precision.model_dump_json(indent=4))
       print(f"Completed prime {prime} ({i+1}/{len(primes)}) (A={prime_precision.fittest_a:.8f}, B={prime_precision.fittest_b}, Y={prime_precision.fittest_y:.8f})")
