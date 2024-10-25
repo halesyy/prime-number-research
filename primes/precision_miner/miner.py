@@ -130,7 +130,7 @@ def main():
    ex = load_x_log_x_y_ex() # "((x*a)*log(x*b,y))"
    print(ex)
    for i, prime in enumerate(primes):
-      if prime < 1087:
+      if prime < 71809:
          continue
       prime_precision = precision_mine_prime(ex, i+1, prime)
       open(f"prime_stats/{prime}.json", "w").write(prime_precision.model_dump_json(indent=4))
