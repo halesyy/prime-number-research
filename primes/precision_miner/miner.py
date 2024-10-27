@@ -197,8 +197,11 @@ def main():
    #    print(f"Completed prime {prime} ({i+1}/{len(primes)}) (A={prime_precision.fittest_a:.8f}, B={prime_precision.fittest_b}, Y={prime_precision.fittest_y:.8f})")
 
    start = perf_counter()
-   xs = [i+1 for i, _ in enumerate(primes)][50:]
-   ys = [precision_mine_prime_tweak_y(ex, i+1, prime) for i, prime in enumerate(primes)][50:]
+   # xs = [i+10 for i in range(4000)]
+   # ys = [precision_mine_prime_tweak_y(ex, x, x) for x in xs]
+
+   xs = [i+1 for i, _ in enumerate(primes)]
+   ys = [precision_mine_prime_tweak_y(ex, i+1, prime) for i, prime in enumerate(primes)]
    print(f"Completed in {perf_counter() - start:.2f}s")
    plt.plot(xs, ys)
    plt.show()
