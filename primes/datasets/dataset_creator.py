@@ -2,6 +2,8 @@
 import json
 from pathlib import Path
 
+# https://t5k.org/nthprime/ - nth prime
+# http://www.primos.mat.br/2T_en.html - dataset of primes
 
 def eratosthenes(n: int) -> list[int]:
    sieve: list[bool] = [True] * (n+1)

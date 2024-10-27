@@ -256,8 +256,11 @@ def precision_mine_prime(ex: Expression, n: int, prime: int):
 
    return prime_fitness
 
+
+
 def main():
-   primes = load_primes_from_path(Path(f"../datasets/primes_1000000.json"))
+   # primes = load_primes_from_path(Path(f"../datasets/primes_1000000.json"))
+   primes = load_primes_from_path(Path(f"../datasets/primes_7500000.json"))
    ex = load_x_log_x_y_ex() # "((x*a)*log(x*b,y))"
    print(ex)
    # for i, prime in enumerate(primes):
