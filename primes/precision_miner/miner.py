@@ -2,6 +2,7 @@
 import json
 import logging
 from pathlib import Path
+from time import perf_counter
 
 from pydantic import BaseModel
 from primes.expressions.generator import parse_expression
@@ -9,6 +10,8 @@ from primes.expressions.valuable import load_x_log_x_y_ex
 from primes.fitter import eval_multivariate, eval_multivate_safe
 from primes.utils import better_range, load_primes_from_path
 from py_expression_eval import Parser, Expression
+
+import matplotlib.pyplot as plt
 
 class PrimeFitnesses(BaseModel):
    prime: int
@@ -39,17 +42,13 @@ def y_a_b_generator(
    pass
 
 def precision_mine_prime_tweak_y(ex: Expression, n: int, prime: int):
-   print("solving for prime:", prime, "with X:", n)
+   # print("solving for prime:", prime, "with X:", n)
    fittest = float("inf")
-
-   current_y = 0
+   current_y = 2 # 0/1 don't resolve - math domain error
    fittest_y = 0
-
    step_size = 1
    direction = 1
-
    steps = 0
-   
    while True:
       steps += 1
       variables: dict[str, float] = { "x": n, "y": current_y, "a": 1, "b": 1 }
@@ -57,22 +56,30 @@ def precision_mine_prime_tweak_y(ex: Expression, n: int, prime: int):
 
       # Bad result or math domain error.
       if predicted_result is None:
+         print(f"Failed to evaluate expression {ex} with variables {variables}")
          current_y += step_size
          steps += 1
          continue
       
+      if steps > 10_000 and fittest == 2.00:
+         logging.warning(f"Failed to find fittest y for prime {prime} after 100,000 steps.")
+         break
+
       fitness_rel = prime - predicted_result
       fitness = abs(fitness_rel)
+      # print(current_y, fitness_rel, fittest)
 
-      
       if fitness < fittest:
          fittest = fitness
-         print(f"New fittest: {fittest} at {current_y}")
          fittest_y = current_y
          current_y += step_size * direction
+         if (fitness < 0.001 and direction == 1) or fitness == 0:
+            break
+         elif fitness < 0.00001:
+            break
       else:
          # current_y += step_size * direction
-         print(f"Current fitness: {fitness} at {current_y}")
+         # print(f"Current fitness: {fitness} at {current_y}")
          # Too far! We have to move back to fittest_y.
          # Step size moved us too far.
          current_y = fittest_y
@@ -81,18 +88,15 @@ def precision_mine_prime_tweak_y(ex: Expression, n: int, prime: int):
          else:
             direction = -1
          step_size /= 10
-         print(f"Going back to {fittest_y} and inverting direction to {direction * step_size}")
+         # print(f"Going back to {fittest_y} and inverting direction to {direction * step_size}")
          current_y += step_size * direction
-
       
+      # input()
       steps += 1
 
-      print(variables, predicted_result, fitness_rel, step_size)
-      input()
-
-
-
-
+   if steps > 10_000:
+      print(f"Found fittest y: {fittest_y} in {steps} steps")
+   return fittest_y
 
 # n=1, prime=1st prime
 def precision_mine_prime(ex: Expression, n: int, prime: int):
@@ -192,9 +196,16 @@ def main():
    #    open(f"prime_stats/{prime}.json", "w").write(prime_precision.model_dump_json(indent=4))
    #    print(f"Completed prime {prime} ({i+1}/{len(primes)}) (A={prime_precision.fittest_a:.8f}, B={prime_precision.fittest_b}, Y={prime_precision.fittest_y:.8f})")
 
-   for i, prime in enumerate(primes):
-      if i == 200:
-         precision_mine_prime_tweak_y(ex, i+1, prime)
+   start = perf_counter()
+   xs = [i+1 for i, _ in enumerate(primes)][50:]
+   ys = [precision_mine_prime_tweak_y(ex, i+1, prime) for i, prime in enumerate(primes)][50:]
+   print(f"Completed in {perf_counter() - start:.2f}s")
+   plt.plot(xs, ys)
+   plt.show()
+
+   # for i, prime in enumerate(primes):
+   #    fittest_y = precision_mine_prime_tweak_y(ex, i+1, prime)
+   #    print(prime, fittest_y)
 
 if __name__ == "__main__":
    main()
