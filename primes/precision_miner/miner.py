@@ -204,6 +204,9 @@ def main():
    ys = [precision_mine_prime_tweak_y(ex, i+1, prime) for i, prime in enumerate(primes)]
    print(f"Completed in {perf_counter() - start:.2f}s")
    plt.plot(xs, ys)
+   plt.xscale("log")
+   # plt.yscale("log")
+   plt.savefig("y_fit_1m_xlog.png")
    plt.show()
 
    # for i, prime in enumerate(primes):
