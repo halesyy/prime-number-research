@@ -38,6 +38,62 @@ def y_a_b_generator(
 ):
    pass
 
+def precision_mine_prime_tweak_y(ex: Expression, n: int, prime: int):
+   print("solving for prime:", prime, "with X:", n)
+   fittest = float("inf")
+
+   current_y = 0
+   fittest_y = 0
+
+   step_size = 1
+   direction = 1
+
+   steps = 0
+   
+   while True:
+      steps += 1
+      variables: dict[str, float] = { "x": n, "y": current_y, "a": 1, "b": 1 }
+      predicted_result = eval_multivate_safe(ex, variables)
+
+      # Bad result or math domain error.
+      if predicted_result is None:
+         current_y += step_size
+         steps += 1
+         continue
+      
+      fitness_rel = prime - predicted_result
+      fitness = abs(fitness_rel)
+
+      
+      if fitness < fittest:
+         fittest = fitness
+         print(f"New fittest: {fittest} at {current_y}")
+         fittest_y = current_y
+         current_y += step_size * direction
+      else:
+         # current_y += step_size * direction
+         print(f"Current fitness: {fitness} at {current_y}")
+         # Too far! We have to move back to fittest_y.
+         # Step size moved us too far.
+         current_y = fittest_y
+         if fitness_rel < 0:
+            direction = 1
+         else:
+            direction = -1
+         step_size /= 10
+         print(f"Going back to {fittest_y} and inverting direction to {direction * step_size}")
+         current_y += step_size * direction
+
+      
+      steps += 1
+
+      print(variables, predicted_result, fitness_rel, step_size)
+      input()
+
+
+
+
+
 # n=1, prime=1st prime
 def precision_mine_prime(ex: Expression, n: int, prime: int):
    prime_fitness = PrimeFitnesses(prime=prime)
@@ -129,12 +185,16 @@ def main():
    primes = load_primes_from_path(Path(f"../datasets/primes_1000000.json"))
    ex = load_x_log_x_y_ex() # "((x*a)*log(x*b,y))"
    print(ex)
+   # for i, prime in enumerate(primes):
+   #    if prime < 71809:
+   #       continue
+   #    prime_precision = precision_mine_prime(ex, i+1, prime)
+   #    open(f"prime_stats/{prime}.json", "w").write(prime_precision.model_dump_json(indent=4))
+   #    print(f"Completed prime {prime} ({i+1}/{len(primes)}) (A={prime_precision.fittest_a:.8f}, B={prime_precision.fittest_b}, Y={prime_precision.fittest_y:.8f})")
+
    for i, prime in enumerate(primes):
-      if prime < 71809:
-         continue
-      prime_precision = precision_mine_prime(ex, i+1, prime)
-      open(f"prime_stats/{prime}.json", "w").write(prime_precision.model_dump_json(indent=4))
-      print(f"Completed prime {prime} ({i+1}/{len(primes)}) (A={prime_precision.fittest_a:.8f}, B={prime_precision.fittest_b}, Y={prime_precision.fittest_y:.8f})")
+      if i == 200:
+         precision_mine_prime_tweak_y(ex, i+1, prime)
 
 if __name__ == "__main__":
    main()

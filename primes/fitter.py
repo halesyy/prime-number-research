@@ -55,7 +55,7 @@ def eval_multivariate(eq: Expression, variables: dict[str, float]) -> float | No
    result = eq.evaluate(variables)
    return result
 
-def eval_multivate_safe(eq: Expression, variables: dict[str, float], primes: list[int]):
+def eval_multivate_safe(eq: Expression, variables: dict[str, float]):
    try:
       return eval_multivariate(eq, variables)
    except:
@@ -182,7 +182,7 @@ def main_multivariate_grouper_test():
             for x in better_range(x_start, x_end, 1):
                variables: dict[str, float] = { "x": x, "y": y, "a": a, "b": b }
                # print(variables)
-               result = eval_multivate_safe(ex, variables, primes)
+               result = eval_multivate_safe(ex, variables)
                if result is None:
                   break # Stop x-iter - this one sucks.
                results.append(result)
