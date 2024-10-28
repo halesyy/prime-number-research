@@ -61,11 +61,7 @@ def dynamic_tweaker(
 
    while True:
       steps += 1
-      # variables: dict[str, float] = { "x": n, "y": current_y, "a": 1, "b": 1 }
       variables = sub_variables(n, tweaking, current_T)
-      # if n > 1:
-      #    print(variables)
-      #    input()
       predicted_result = eval_multivate_safe(ex, variables)
 
       # Bad result or math domain error.
@@ -78,10 +74,13 @@ def dynamic_tweaker(
       if steps > 10_000 and fittest == 2.00:
          logging.warning(f"Failed to find fittest y for prime {prime} after 100,000 steps.")
          break
+      if steps > 20000:
+         print(f"Failed to find fittest {tweaking} for prime {prime} after step breaker - likely due to floating point maximisation - completing.")
+         break
 
       fitness_rel = prime - predicted_result
       fitness = abs(fitness_rel)
-      # print(current_T, fitness_rel, fittest)
+      print(current_T, fitness_rel, fittest)
 
       if fitness < fittest:
          fittest = fitness
@@ -93,7 +92,7 @@ def dynamic_tweaker(
             break
       else:
          # current_y += step_size * direction
-         # print(f"Current fitness: {fitness} at {current_y}")
+         print(f"Current fitness: {fitness} at {current_T}")
          # Too far! We have to move back to fittest_y.
          # Step size moved us too far.
          current_T = fittest_T
@@ -102,14 +101,15 @@ def dynamic_tweaker(
          else:
             direction = -1
          step_size /= 10
-         # print(f"Going back to {fittest_y} and inverting direction to {direction * step_size}")
+         print(f"Going back to {tweaking}={fittest_T} and inverting direction to {direction * step_size}")
          current_T += step_size * direction
       
-      # input()
+      input()
       steps += 1
 
    if steps > 10_000:
-      print(f"Found fittest y: {fittest_T} in {steps} steps")
+      print(f"Found fittest {tweaking}: {fittest_T} in {steps} steps, fitness: {fittest}, prime: {prime}")
+   
    return fittest_T
 
 def precision_mine_prime_tweak_y(ex: Expression, n: int, prime: int):
@@ -262,39 +262,31 @@ def main():
    # primes = load_primes_from_path(Path(f"../datasets/primes_1000000.json"))
    primes = load_primes_from_path(Path(f"../datasets/primes_7500000.json"))
    ex = load_x_log_x_y_ex() # "((x*a)*log(x*b,y))"
-   print(ex)
-   # for i, prime in enumerate(primes):
-   #    if prime < 71809:
-   #       continue
-   #    prime_precision = precision_mine_prime(ex, i+1, prime)
-   #    open(f"prime_stats/{prime}.json", "w").write(prime_precision.model_dump_json(indent=4))
-   #    print(f"Completed prime {prime} ({i+1}/{len(primes)}) (A={prime_precision.fittest_a:.8f}, B={prime_precision.fittest_b}, Y={prime_precision.fittest_y:.8f})")
+   # print(ex)
 
-   # for i, prime in enumerate(primes):
-   #    y = dynamic_tweaker(ex, i+1, "y", prime, 2.00)
-   #    print(i+1, prime, y)
+   # y_fit = dynamic_tweaker(ex, 1_000_000_000, "a", 22_801_763_489)
+   # print(y_fit)
+
+   # y_fit = dynamic_tweaker(ex, 1_000_000_000_000, "a", 29_996_224_275_833)
+   # print(y_fit)
+
+   n = 50
+   prime = primes[n-1]
+   dynamic_tweaker(ex, n, "a", prime, 0)
+   exit()
+
 
    # exit()
 
    start = perf_counter()
-   # xs = [i+10 for i in range(4000)]
-   # ys = [precision_mine_prime_tweak_y(ex, x, x) for x in xs]
 
    xs = [i+1 for i, _ in enumerate(primes)]
-   # ys = [precision_mine_prime_tweak_y(ex, i+1, prime) for i, prime in enumerate(primes)]
-   ys = [dynamic_tweaker(ex, i+1, "y", prime, 2.00) for i, prime in enumerate(primes)]
-   
+   ys = [dynamic_tweaker(ex, i+1, "a", prime, 2.00) for i, prime in enumerate(primes)]
 
    print(f"Completed in {perf_counter() - start:.2f}s")
    plt.plot(xs, ys)
-   plt.xscale("log")
-   # plt.yscale("log")
-   # plt.savefig("y_fit_1m_xlog.png")
+   # plt.xscale("log")
    plt.show()
-
-   # for i, prime in enumerate(primes):
-   #    fittest_y = precision_mine_prime_tweak_y(ex, i+1, prime)
-   #    print(prime, fittest_y)
 
 if __name__ == "__main__":
    main()
