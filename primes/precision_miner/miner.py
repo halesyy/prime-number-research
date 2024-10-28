@@ -49,7 +49,9 @@ def dynamic_tweaker(
    n: int, 
    tweaking: Literal["y", "a", "b"], 
    prime: int,
-   start_value: float = 0.00
+   start_value: float = 0.00,
+   log: bool = False,
+   log_final: bool = False
 ):
    fittest = float("inf")
 
@@ -58,79 +60,74 @@ def dynamic_tweaker(
    
    step_size = 1.00
    direction = 1
-   
    steps = 0
 
    while True:
-      steps += 1
       variables = sub_variables(n, tweaking, current_T)
       predicted_result = eval_multivate_safe(ex, variables)
-      print(variables, "=", predicted_result)
+      # print(variables, "=", predicted_result)
 
       # Bad result or math domain error.
       if predicted_result is None:
-         print(f"Failed to evaluate expression {ex} with variables {variables}")
+         if log: print(f"Failed to evaluate expression {ex} with variables {variables}")
          current_T += step_size
          steps += 1
          continue
 
       fitness_rel = prime - predicted_result
+      fitness = abs(fitness_rel)
 
       if fitness_rel > 0 and fitness_rel < fittest:
          fittest = fitness_rel
          fittest_T = current_T
+      if fitness_rel == 0 or (fitness_rel <= 0.001 and fitness_rel > 0):
+         break
+      elif fitness < 0.000001:
+         break
 
-      print(current_T, fitness_rel)
+      if steps > 10_000 and fittest == 2.00:
+         logging.warning(f"Failed to find fittest {tweaking} for prime {prime} after 100,000 steps.")
+         break
+      if steps > 2500:
+         logging.warning(f"Failed to find fittest {tweaking} for prime {prime} after 25,000 steps.")
+         break
+
+      if log: print(current_T, fitness_rel)
 
       if fitness_rel > 0 and direction == 1:
-         print("Still ascending, keep going")
+         if log: print("Still ascending, keep going")
          current_T += step_size
-      elif fitness_rel < 0 and direction == 1 and step_size == 1.00:
-         print("Too far and on 1's")
+      elif fitness_rel < 0 and direction == 1 and fittest_T == 0.00:
+         if log: print("Too far and on 1's")
          # still 1's, too far, go back, adjust step size
+         current_T += 1
+         direction = -1
          step_size /= 10
       elif fitness_rel == 0:
-         print("Found fittest value.")
+         if log: print("Found fittest value.")
          break
       elif fitness_rel < 0 and direction == 1:
-         print("Too far from 1's, going back to fittest positive, then changing direction and step size")
+         if log: print("Too far from 1's, going back to fittest positive, then changing direction and step size")
          # still 1's, too far, go back, adjust step size
          current_T = fittest_T
          direction = 1
          step_size /= 10
-      # elif fitness_rel < 0 and direction == -1:
-      #    print("Too far from <1 step size, going to go back and step down again")
-      #    # post 1's, go back to previous, adjust step size
-      #    current_T = fittest_T
-      #    direction = -1
-      #    step_size /= 10
-      #    current_T += step_size * direction
+      elif fitness_rel < 0 and direction == -1:
+         if log: print("Too far from <1 step size, going to go back and step down again")
+         # post 1's, go back to previous, adjust step size
+         current_T = fittest_T
+         direction = -1
+         step_size /= 10
       else:
-         print("Unknown state")
+         if log: print("Regular step")
          current_T += step_size * direction
-      
-      print(f"{tweaking}={current_T}, fitness={fitness_rel}, fittest={fittest}, step size: {step_size * direction}")
-      
-      
 
-      print(current_T)
-      input()
+      if log:
+         print(f"{tweaking}={current_T}, fitness={fitness_rel}, fittest={fittest}, step size: {step_size * direction}")
+         input()
+      steps += 1
 
-      # if fitness_rel < 0:
-      #    if direction == 1:
-      #       # We've adjusted too far from first, and need to step back, then
-      #       # reduce step size.
-      #       pass
-      #    else:
-      #       # We're moving in the right direction.
-      #       pass
-      # elif fitness_rel >= 0:
-      #    pass
-
-
-      
-   print(f"Found fittest {tweaking}: {fittest_T} in {steps} steps, fitness: {fittest}, prime: {prime}")
-   
+   if log_final: print(f"Found fittest {tweaking}: {fittest_T} in {steps} steps, fitness: {fittest}, prime: {prime}")
    return fittest_T
 
 def precision_mine_prime_tweak_y(ex: Expression, n: int, prime: int):
@@ -285,19 +282,13 @@ def main():
    ex = load_x_log_x_y_ex() # "((x*a)*log(x*b,y))"
    # print(ex)
 
-   # y_fit = dynamic_tweaker(ex, 1_000_000_000, "a", 22_801_763_489)
-   # print(y_fit)
+   y_fit = dynamic_tweaker(ex, 1_000_000_000, "a", 22_801_763_489)
+   print(y_fit)
 
-   # y_fit = dynamic_tweaker(ex, 1_000_000_000_000, "a", 29_996_224_275_833)
-   # print(y_fit)
+   y_fit = dynamic_tweaker(ex, 1_000_000_000_000, "a", 29_996_224_275_833, log_final=True)
+   print(y_fit)
 
-   n = 50
-   prime = primes[n-1]
-   dynamic_tweaker(ex, n, "y", prime, 0)
    exit()
-
-
-   # exit()
 
    start = perf_counter()
 
