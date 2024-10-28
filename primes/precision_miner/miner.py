@@ -55,14 +55,17 @@ def dynamic_tweaker(
 
    current_T = start_value # 0/1 don't resolve - math domain error
    fittest_T = 0
+   
    step_size = 1.00
    direction = 1
+   
    steps = 0
 
    while True:
       steps += 1
       variables = sub_variables(n, tweaking, current_T)
       predicted_result = eval_multivate_safe(ex, variables)
+      print(variables, "=", predicted_result)
 
       # Bad result or math domain error.
       if predicted_result is None:
@@ -70,45 +73,63 @@ def dynamic_tweaker(
          current_T += step_size
          steps += 1
          continue
-      
-      if steps > 10_000 and fittest == 2.00:
-         logging.warning(f"Failed to find fittest y for prime {prime} after 100,000 steps.")
-         break
-      if steps > 20000:
-         print(f"Failed to find fittest {tweaking} for prime {prime} after step breaker - likely due to floating point maximisation - completing.")
-         break
 
       fitness_rel = prime - predicted_result
-      fitness = abs(fitness_rel)
-      print(current_T, fitness_rel, fittest)
 
-      if fitness < fittest:
-         fittest = fitness
+      if fitness_rel > 0 and fitness_rel < fittest:
+         fittest = fitness_rel
          fittest_T = current_T
-         current_T += step_size * direction
-         if (fitness < 0.001 and direction == 1) or fitness == 0:
-            break
-         elif fitness < 0.00001:
-            break
-      else:
-         # current_y += step_size * direction
-         print(f"Current fitness: {fitness} at {current_T}")
-         # Too far! We have to move back to fittest_y.
-         # Step size moved us too far.
-         current_T = fittest_T
-         if fitness_rel < 0:
-            direction = 1
-         else:
-            direction = -1
+
+      print(current_T, fitness_rel)
+
+      if fitness_rel > 0 and direction == 1:
+         print("Still ascending, keep going")
+         current_T += step_size
+      elif fitness_rel < 0 and direction == 1 and step_size == 1.00:
+         print("Too far and on 1's")
+         # still 1's, too far, go back, adjust step size
          step_size /= 10
-         print(f"Going back to {tweaking}={fittest_T} and inverting direction to {direction * step_size}")
+      elif fitness_rel == 0:
+         print("Found fittest value.")
+         break
+      elif fitness_rel < 0 and direction == 1:
+         print("Too far from 1's, going back to fittest positive, then changing direction and step size")
+         # still 1's, too far, go back, adjust step size
+         current_T = fittest_T
+         direction = 1
+         step_size /= 10
+      # elif fitness_rel < 0 and direction == -1:
+      #    print("Too far from <1 step size, going to go back and step down again")
+      #    # post 1's, go back to previous, adjust step size
+      #    current_T = fittest_T
+      #    direction = -1
+      #    step_size /= 10
+      #    current_T += step_size * direction
+      else:
+         print("Unknown state")
          current_T += step_size * direction
       
-      input()
-      steps += 1
+      print(f"{tweaking}={current_T}, fitness={fitness_rel}, fittest={fittest}, step size: {step_size * direction}")
+      
+      
 
-   if steps > 10_000:
-      print(f"Found fittest {tweaking}: {fittest_T} in {steps} steps, fitness: {fittest}, prime: {prime}")
+      print(current_T)
+      input()
+
+      # if fitness_rel < 0:
+      #    if direction == 1:
+      #       # We've adjusted too far from first, and need to step back, then
+      #       # reduce step size.
+      #       pass
+      #    else:
+      #       # We're moving in the right direction.
+      #       pass
+      # elif fitness_rel >= 0:
+      #    pass
+
+
+      
+   print(f"Found fittest {tweaking}: {fittest_T} in {steps} steps, fitness: {fittest}, prime: {prime}")
    
    return fittest_T
 
@@ -272,7 +293,7 @@ def main():
 
    n = 50
    prime = primes[n-1]
-   dynamic_tweaker(ex, n, "a", prime, 0)
+   dynamic_tweaker(ex, n, "y", prime, 0)
    exit()
 
 
