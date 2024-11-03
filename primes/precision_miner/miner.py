@@ -36,7 +36,7 @@ class PrimeFitnesses(BaseModel):
    fit_b_count: int = 0
    best_b_fitness: float = float("inf")
 
-def sub_variables(n: int, tweaking: Literal["y", "a", "b"], value: float) -> dict[str, float]:
+def sub_variables(n: float, tweaking: Literal["y", "a", "b"], value: float) -> dict[str, float]:
    variables: dict[str, float] = { "x": n, "y": 7, "a": 1, "b": 1 }
    if tweaking == "y":
       variables["y"] = value
@@ -47,6 +47,53 @@ def sub_variables(n: int, tweaking: Literal["y", "a", "b"], value: float) -> dic
    else:
       raise ValueError(f"Invalid tweaking variable: {tweaking}")
    return variables
+
+def x_finder(ex: Expression, start_x: float, prime: int) -> float | None:
+   """A dynamic tweaker, but for x-fitting to an expression.
+   This has the advantage of moving from the prior spot."""
+   
+   fittest = float("inf")
+   current_x = start_x  
+   fittest_x = 0
+   step_size = 1.00
+   steps = 0
+
+   while True:
+      variables = sub_variables(current_x, "y", 7.00) # set y=7 base
+      predicted_result = eval_multivate_safe(ex, variables)
+
+      # Bad result or math domain error.
+      if predicted_result is None:
+         current_x += step_size
+         continue
+         
+      # if predicted_result == 0:
+      #    return current_x
+      if steps > 10_000 and fittest == float("inf"):
+         return None
+
+      fitness_rel = prime - predicted_result
+      fitness = abs(fitness_rel)
+
+      if fitness_rel > 0 and fitness_rel < fittest:
+         fittest = fitness_rel
+         fittest_x = current_x
+      if fitness_rel == 0 or (fitness_rel <= 0.001 and fitness_rel > 0):
+         break
+      elif fitness < 0.000001:
+         break
+
+      if fitness_rel > 0:
+         current_x += step_size
+      elif fitness_rel < 0:
+         current_x = fittest_x
+         step_size /= 10
+
+      steps += 1
+
+   return fittest_x
+
+
 
 def dynamic_tweaker(
    ex: Expression, 
@@ -140,7 +187,25 @@ def main_large_tweaking():
    print(y_fit)
    y_fit = dynamic_tweaker(ex, 1_000_000_000_000, "a", 29_996_224_275_833, log_final=True)
    print(y_fit)
-   
+
+def main_x_fitting():
+   ex = load_x_log_x_y_ex()
+   primes = load_primes_from_path(Path(f"../datasets/primes_1000000.json"))
+   last_x = 0
+   xs: list[float] = []
+   for i, prime in enumerate(primes):
+      if i < 5:
+         continue
+      x = x_finder(ex, last_x, prime)
+      # print(f"Prime {prime} x: {x}")
+      if x is not None:
+         last_x = x
+         xs.append(x)
+      else:
+         xs.append(0.00)
+   open("xs.json", "w").write(json.dumps(xs, indent=4))
+   open("xs_d.json", "w").write(json.dumps(series_deltas(xs), indent=4))
+   open("xs_dd.json", "w").write(json.dumps(series_deltas(series_deltas(xs)), indent=4))
 
 def main():
    primes = load_primes_from_path(Path(f"../datasets/primes_1000000.json"))
@@ -190,4 +255,4 @@ def main():
    # plt.show()
 
 if __name__ == "__main__":
-   main()
+   main_x_fitting()
