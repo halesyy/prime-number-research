@@ -1,7 +1,7 @@
 
 
 
-from primes.precision_miner.uq_analysis.deltas import series_deltas
+from primes.precision_miner.uq_analysis.deltas import series_difference_deltas
 
 
 def series_reversals(series: list[float]) -> list[int]:
@@ -9,7 +9,7 @@ def series_reversals(series: list[float]) -> list[int]:
    counter = 0 
    diff_period: list[int] = []
 
-   # deltas = series_deltas(series)
+   # deltas = series_difference_deltas(series)
 
    for _, diff_delta in enumerate(series):
       if diff_delta > 0:

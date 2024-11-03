@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from primes.expressions.generator import parse_expression
 from primes.expressions.valuable import load_x_log_x_y_ex
 from primes.fitter import eval_multivariate, eval_multivate_safe
-from primes.precision_miner.uq_analysis.deltas import series_deltas
+from primes.precision_miner.uq_analysis.deltas import series_difference_deltas
 from primes.precision_miner.uq_analysis.reversal import series_reversals
 from primes.utils import better_range, load_primes_from_path
 from py_expression_eval import Parser, Expression
@@ -93,22 +93,21 @@ def x_finder(ex: Expression, start_x: float, prime: int) -> float | None:
 
    return fittest_x
 
-
-
 def dynamic_tweaker(
    ex: Expression, 
    n: int, 
    tweaking: Literal["y", "a", "b"], 
-   prime: int,
+   prime: float,
    start_value: float = 0.00,
    log: bool = False,
-   log_final: bool = False
+   log_final: bool = False,
+   max_steps: float = 2_500
 ):
    fittest = float("inf")
    current_T = start_value # 0/1 don't resolve - math domain error
    fittest_T = 0
 
-   step_size = 1.00
+   step_size = 1
    direction = 1
    steps = 0
 
@@ -136,10 +135,10 @@ def dynamic_tweaker(
          break
 
       if steps > 10_000 and fittest == 2.00:
-         logging.warning(f"Failed to find fittest {tweaking} for prime {prime} after 100,000 steps.")
+         logging.warning(f"Failed to find fittest {tweaking} for prime {prime} after 10,000 steps.")
          break
-      if steps > 2500:
-         logging.warning(f"Failed to find fittest {tweaking} for prime {prime} after 2500 steps.")
+      if steps > max_steps:
+         logging.warning(f"Failed to find fittest {tweaking} for prime {prime} after {max_steps} steps.")
          break
 
       if log: print(current_T, fitness_rel)
@@ -180,6 +179,22 @@ def dynamic_tweaker(
    if log_final: print(f"Found fittest {tweaking}: {fittest_T} in {steps} steps, fitness: {fittest}, prime: {prime}")
    return fittest_T
 
+def dynamic_tweaker_period(
+   ex: Expression, 
+   n: int, 
+   tweaking: Literal["y", "a", "b"], 
+   prime: int,
+   start_value: float = 0.00,
+   max_steps: float = 2_500
+):
+   prime_min = prime - 0.4999
+   prime_max = prime + 0.4999
+   fit_min = dynamic_tweaker(ex, n, tweaking, prime_min, start_value, max_steps=max_steps)
+   fit_max = dynamic_tweaker(ex, n, tweaking, prime_max, start_value, max_steps=max_steps)
+   vals = [fit_min, fit_max]
+   fit_min = min(vals)
+   fit_max = max(vals)
+   return fit_min, fit_max
 
 def main_large_tweaking():
    ex = load_x_log_x_y_ex() 
@@ -203,9 +218,10 @@ def main_x_fitting():
          xs.append(x)
       else:
          xs.append(0.00)
+
    open("xs.json", "w").write(json.dumps(xs, indent=4))
-   open("xs_d.json", "w").write(json.dumps(series_deltas(xs), indent=4))
-   open("xs_dd.json", "w").write(json.dumps(series_deltas(series_deltas(xs)), indent=4))
+   open("xs_d.json", "w").write(json.dumps(series_difference_deltas(xs), indent=4))
+   open("xs_dd.json", "w").write(json.dumps(series_difference_deltas(series_difference_deltas(xs)), indent=4))
 
 def main():
    primes = load_primes_from_path(Path(f"../datasets/primes_1000000.json"))
@@ -218,11 +234,15 @@ def main():
    # afit_series = [dynamic_tweaker(ex, i+1, "a", prime, 2.00) for i, prime in enumerate(primes)]
    # open("as.json", "w").write(json.dumps(afit_series))
    # open("ys.json", "w").write(json.dumps(ys))
-   yS = json.load(open("ys.json", "r"))[3:]
-   aS = json.load(open("as.json", "r"))[3:]
 
-   reversals_y = series_reversals(series_deltas(yS))
-   reversals_a = series_reversals(series_deltas(aS))
+   bfit_series = [dynamic_tweaker(ex, i+1, "b", prime, 1, max_steps=100_000) for i, prime in enumerate(primes)]
+   open("bs.json", "w").write(json.dumps(bfit_series))
+
+   yS = json.load(open("outputs/ys.json", "r"))[3:]
+   aS = json.load(open("outputs/as.json", "r"))[3:]
+
+   reversals_y = series_reversals(series_difference_deltas(yS))
+   reversals_a = series_reversals(series_difference_deltas(aS))
 
    # plt.hist(reversals, color='lightgreen', ec='black', bins=30)
 
@@ -254,5 +274,31 @@ def main():
    # plt.yscale("log")
    # plt.show()
 
+class FitnessRange(BaseModel):
+   tweaking: Literal["y", "a", "b"]
+   minValue: float
+   fitValue: float
+   maxValue: float
+   
+   minPercOffset: float 
+   maxPercOffset: float
+
+def main_fitness_ranges():
+   primes = load_primes_from_path(Path(f"../datasets/primes_1000000.json"))
+   ex = load_x_log_x_y_ex() # "((x*a)*log(x*b,y))"
+   values: list[FitnessRange] = []
+   for i, prime in enumerate(primes):
+      y_min, y_max = dynamic_tweaker_period(ex, i+1, "y", prime, max_steps=25_000)
+      y_fittest = dynamic_tweaker(ex, i+1, "y", prime, 2.00, max_steps=25_000)
+      values.append(FitnessRange(
+         tweaking="y",
+         minValue=y_min,
+         fitValue=y_fittest,
+         maxValue=y_max,
+         minPercOffset=(y_min / y_fittest) - 1,
+         maxPercOffset=(y_max / y_fittest) - 1
+      ))
+   open("outputs/ys_periods.json", "w").write(json.dumps([v.model_dump() for v in values]))
+
 if __name__ == "__main__":
-   main_x_fitting()
+   main_fitness_ranges()

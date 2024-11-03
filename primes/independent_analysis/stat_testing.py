@@ -4,7 +4,7 @@ from typing import Any
 import numpy as np
 from scipy import stats
 
-from primes.precision_miner.uq_analysis.deltas import series_deltas
+from primes.precision_miner.uq_analysis.deltas import series_difference_deltas
 from primes.precision_miner.uq_analysis.reversal import series_reversals
 
 from statsmodels.tsa.stattools import adfuller
@@ -13,13 +13,13 @@ import matplotlib.pyplot as plt
 def main():
    Ys = json.load(open("../precision_miner/ys.json"))
    Ys_arr = np.array(Ys)
-   Yd = series_deltas(Ys)
+   Yd = series_difference_deltas(Ys)
    Yr = series_reversals(Yd)
    Y_inspect = Ys
 
    As = json.load(open("../precision_miner/as.json"))
    As_arr = np.array(As)
-   Ad = series_deltas(As)
+   Ad = series_difference_deltas(As)
    Ar = series_reversals(Ad)
    A_inspect = As
 
@@ -31,7 +31,7 @@ def main():
    # print(f"Y skewness: {stats.skew(Y_inspect)}, Y kurtosis: {stats.kurtosis(Y_inspect)}")
    # print()
 
-   # result: Any = adfuller(series_deltas(Yd))
+   # result: Any = adfuller(series_difference_deltas(Yd))
    # print('ADF Statistic:', result[0])
    # print('p-value:', result[1])
    # for key, value in result[4].items():
