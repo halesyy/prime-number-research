@@ -140,7 +140,7 @@ def main_large_tweaking():
    print(y_fit)
    y_fit = dynamic_tweaker(ex, 1_000_000_000_000, "a", 29_996_224_275_833, log_final=True)
    print(y_fit)
-
+   
 
 def main():
    primes = load_primes_from_path(Path(f"../datasets/primes_1000000.json"))
@@ -161,13 +161,15 @@ def main():
 
    # plt.hist(reversals, color='lightgreen', ec='black', bins=30)
 
-   c = Counter(reversals_y)
-   for k in sorted(list(c.keys())):
-      plt.bar(k, c[k], color="blue", alpha=0.5)
+   cy = Counter(reversals_y)
+   print("y", cy)
+   for k in sorted(list(cy.keys())):
+      plt.bar(k, cy[k], color="blue", alpha=0.5)
 
-   c = Counter(reversals_a)
-   for k in sorted(list(c.keys())):
-      plt.bar(k, c[k], color="red", alpha=0.5)
+   ca = Counter(reversals_a)
+   print("a", ca)
+   for k in sorted(list(ca.keys())):
+      plt.bar(k, ca[k], color="red", alpha=0.5)
 
    # sns.displot(reversals, kde=True, bins=150)
 
