@@ -1,4 +1,5 @@
 
+from collections import Counter
 import json
 from pathlib import Path
 
@@ -41,12 +42,41 @@ def plot_neighbour_periods():
    plt.show()
 
 def neighbours_grouped_analysis():
-   ys_periods_datas = json.load(open("../precision_miner/outputs/ys_periods.json"))
+   period_datas = json.load(open("../precision_miner/outputs/bs_periods.json"))
+   periods = [FitnessRange(**data) for data in period_datas]
+
+   groups: list[list[FitnessRange]] = []
+   current_group: list[FitnessRange] = []
+
+   for i, ysp in enumerate(periods):
+      current_group.append(ysp)
+      
+      max_values = [p.maxValue for p in current_group]
+      min_values = [p.minValue for p in current_group]
+
+      max_MIN = max(min_values)
+      min_MAX = min(max_values)
+
+      if max_MIN > min_MAX:
+         groups.append(current_group[0:-1])
+         current_group = [ysp]
+         print(f"Group {len(groups)}: {len(groups[-1])} elements")
+      else:
+         pass # all good, keep going
+   
+   group_lens = [len(g) for g in groups]
+   print(Counter(group_lens))
+   plt.plot(group_lens)
+   plt.show()
+
+
+      
+
+
+
    
 
-   for ys_periods_data in ys_periods_datas:
-      ys_period = FitnessRange(**ys_periods_data)
-      
+   
 
 
 if __name__ == "__main__":

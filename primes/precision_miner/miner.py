@@ -6,7 +6,7 @@ from pathlib import Path
 from time import perf_counter
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 from primes.expressions.generator import parse_expression
 from primes.expressions.valuable import load_x_log_x_y_ex
 from primes.fitter import eval_multivariate, eval_multivate_safe
@@ -283,22 +283,28 @@ class FitnessRange(BaseModel):
    minPercOffset: float 
    maxPercOffset: float
 
+   @computed_field
+   @property
+   def str_repr(self) -> str:
+      return f"Min: {self.minValue:.8f}, Fit: {self.fitValue:.8f}, Max: {self.maxValue:.8f}, Gap: {self.maxValue - self.minValue:.8f}"
+
+
 def main_fitness_ranges():
    primes = load_primes_from_path(Path(f"../datasets/primes_1000000.json"))
    ex = load_x_log_x_y_ex() # "((x*a)*log(x*b,y))"
    values: list[FitnessRange] = []
    for i, prime in enumerate(primes):
-      y_min, y_max = dynamic_tweaker_period(ex, i+1, "y", prime, max_steps=25_000)
-      y_fittest = dynamic_tweaker(ex, i+1, "y", prime, 2.00, max_steps=25_000)
+      y_min, y_max = dynamic_tweaker_period(ex, i+1, "b", prime, 1.00, max_steps=25_000)
+      y_fittest = dynamic_tweaker(ex, i+1, "b", prime, 1.00, max_steps=25_000)
       values.append(FitnessRange(
-         tweaking="y",
+         tweaking="b",
          minValue=y_min,
          fitValue=y_fittest,
          maxValue=y_max,
          minPercOffset=(y_min / y_fittest) - 1,
          maxPercOffset=(y_max / y_fittest) - 1
       ))
-   open("outputs/ys_periods.json", "w").write(json.dumps([v.model_dump() for v in values]))
+   open("outputs/bs_periods.json", "w").write(json.dumps([v.model_dump() for v in values]))
 
 if __name__ == "__main__":
    main_fitness_ranges()
