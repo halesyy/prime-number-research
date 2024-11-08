@@ -1,4 +1,5 @@
 .DS_Store
+venv312
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
