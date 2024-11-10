@@ -29,25 +29,31 @@ def main():
    # plt.show() 
 
    # -0.0002, step size of 0.000025
-   
+   # -0.1546 -> 0.2084
 
-   ydm = series_multiplication_deltas(ys)
+   # ydm = series_multiplication_deltas(ys)
+   ydm = series_difference_deltas(ys)
+
    print(min(ydm), max(ydm))
-   # edges = np.linspace(min(ydm), max(ydm), 10000)
-   edges = np.linspace(-0.0002, 0.0002, 4000+1)
+   edges = np.linspace(min(ydm), max(ydm), 3630+1)
+   # edges = np.linspace(-0.0002, 0.0002, 4000+1)
    counts, bin_edges = np.histogram(ydm, edges)
 
    highest_i = list(counts).index(max(counts))
-   from_i = highest_i - 10
-   upto_i = highest_i + 10
+   from_i = highest_i - 1500
+   upto_i = highest_i + 1500
+   from_i = 0
 
-   for i, count in enumerate(counts[from_i:upto_i]):
-      from_edge = edges[(highest_i - 150)+i]
-      upto_edge = edges[(highest_i - 150)+i+1]
-      print(f"{i} {from_edge:.7f} -> {upto_edge:.7f} ({count})")
+   print(f"{highest_i}: {edges[highest_i]:.6f} -> {edges[highest_i+1]:.6f}", counts[highest_i])
+
+   for i, count in enumerate(counts):
+      from_edge = edges[from_i+i]
+      upto_edge = edges[from_i+i+1]
+      # print(f"{i} {from_edge:.7f} -> {upto_edge:.7f} ({count})")
       plt.bar(i, count, color="red", alpha=0.5)
 
-   # plt.show()
+   plt.yscale("log")
+   plt.show()
 
 if __name__ == "__main__":
    main()
