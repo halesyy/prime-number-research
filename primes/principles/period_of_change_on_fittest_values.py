@@ -37,6 +37,7 @@ def main():
    print(min(ydm), max(ydm))
    edges = np.linspace(min(ydm), max(ydm), 3630+1)
    # edges = np.linspace(-0.0002, 0.0002, 4000+1)
+   edges = np.linspace(-0.1546, 0.2084, 3630+1)
    counts, bin_edges = np.histogram(ydm, edges)
 
    highest_i = list(counts).index(max(counts))
@@ -52,7 +53,7 @@ def main():
       # print(f"{i} {from_edge:.7f} -> {upto_edge:.7f} ({count})")
       plt.bar(i, count, color="red", alpha=0.5)
 
-   plt.yscale("log")
+   # plt.yscale("log")
    plt.show()
 
 if __name__ == "__main__":
