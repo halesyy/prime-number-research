@@ -34,7 +34,7 @@ def main():
    ydm = series_multiplication_deltas(ys)
    print(min(ydm), max(ydm))
    # edges = np.linspace(min(ydm), max(ydm), 10000)
-   edges = np.linspace(-0.0002, 0.0002, 2000+1)
+   edges = np.linspace(-0.0002, 0.0002, 4000+1)
    counts, bin_edges = np.histogram(ydm, edges)
 
    highest_i = list(counts).index(max(counts))
