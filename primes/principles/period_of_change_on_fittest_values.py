@@ -56,5 +56,9 @@ def main():
    # plt.yscale("log")
    plt.show()
 
+   # We want to test how a value changes over subsequent periods. I.e. does
+   # the value mean shift over time, to result in the values being edited being 
+   # adjusted over time?
+
 if __name__ == "__main__":
    main()
