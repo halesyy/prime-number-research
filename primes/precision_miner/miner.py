@@ -8,7 +8,7 @@ from typing import Literal
 
 from pydantic import BaseModel, computed_field
 from primes.expressions.generator import parse_expression
-from primes.expressions.valuable import load_x_log_x_y_ex
+from primes.expressions.valuable import load_x_log_x_y_ex, numba_x_log_x_y_ex
 from primes.fitter import eval_multivariate, eval_multivate_safe
 from primes.precision_miner.uq_analysis.deltas import series_difference_deltas
 from primes.precision_miner.uq_analysis.reversal import series_reversals
@@ -113,7 +113,14 @@ def dynamic_tweaker(
 
    while True:
       variables = sub_variables(n, tweaking, current_T)
-      predicted_result = eval_multivate_safe(ex, variables)
+      # predicted_result = eval_multivate_safe(ex, variables)
+      predicted_result = numba_x_log_x_y_ex(
+         x=variables["x"], 
+         y=variables["y"],
+         a=variables["a"],
+         b=variables["b"]
+      )
+
       # print(variables, "=", predicted_result)
 
       # Bad result or math domain error.
@@ -178,6 +185,14 @@ def dynamic_tweaker(
 
    if log_final: print(f"Found fittest {tweaking}: {fittest_T} in {steps} steps, fitness: {fittest}, prime: {prime}")
    return fittest_T
+
+def simple_dynamic_tweaker(
+   n: int, 
+   tweaking: Literal["y", "a", "b"], 
+   prime: float,
+):
+   ex = load_x_log_x_y_ex()
+   return dynamic_tweaker(ex, n, tweaking, prime, start_value=2.00)
 
 def dynamic_tweaker_period(
    ex: Expression, 

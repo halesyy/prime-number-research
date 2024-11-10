@@ -1,3 +1,5 @@
+*.cache.json
+
 .DS_Store
 venv312
 

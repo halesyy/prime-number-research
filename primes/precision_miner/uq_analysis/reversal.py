@@ -28,5 +28,11 @@ def series_reversals(series: list[float]) -> list[int]:
             diff_period.append(counter)
             counter = 1
             was_positive = False
+   else:
+      diff_period.append(-counter)
 
    return diff_period
+
+if __name__ == "__main__":
+   series: list[float] = [1, 1, 1, -1, -1, -1, 1, 1, -2]
+   print(series_reversals(series))
