@@ -38,15 +38,15 @@ def main():
    counts, bin_edges = np.histogram(ydm, edges)
 
    highest_i = list(counts).index(max(counts))
-   from_i = highest_i - 100
-   upto_i = highest_i + 100
+   from_i = highest_i - 10
+   upto_i = highest_i + 10
 
    for i, count in enumerate(counts[from_i:upto_i]):
       from_edge = edges[(highest_i - 150)+i]
       upto_edge = edges[(highest_i - 150)+i+1]
-      print(f"{i} {from_edge:.5f} -> {upto_edge:.5f} ({count})")
+      print(f"{i} {from_edge:.7f} -> {upto_edge:.7f} ({count})")
       plt.bar(i, count, color="red", alpha=0.5)
-      
+
    # plt.show()
 
 if __name__ == "__main__":
