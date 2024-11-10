@@ -21,23 +21,33 @@ def main():
 
    # This should show a figure which looks like a pseudo normal distribution, with its mean
    # tilted towards -1.
-   
+
    # reversals = series_reversals(yd)
    # counted = Counter(reversals)
    # for k in sorted(counted.keys()):
    #    plt.bar(k, counted[k], color="blue", alpha=0.5)
    # plt.show() 
 
+   # -0.0002, step size of 0.000025
+   
+
    ydm = series_multiplication_deltas(ys)
    print(min(ydm), max(ydm))
-   edges = np.linspace(min(ydm), max(ydm), 10000)
+   # edges = np.linspace(min(ydm), max(ydm), 10000)
+   edges = np.linspace(-0.0002, 0.0002, 2000+1)
    counts, bin_edges = np.histogram(ydm, edges)
-   for i, count in enumerate(counts):
-      if not (i > 3780 and i < 3805):
-         continue
-      plt.bar(i, count, color="red", alpha=0.5)
-   plt.show()
 
+   highest_i = list(counts).index(max(counts))
+   from_i = highest_i - 100
+   upto_i = highest_i + 100
+
+   for i, count in enumerate(counts[from_i:upto_i]):
+      from_edge = edges[(highest_i - 150)+i]
+      upto_edge = edges[(highest_i - 150)+i+1]
+      print(f"{i} {from_edge:.5f} -> {upto_edge:.5f} ({count})")
+      plt.bar(i, count, color="red", alpha=0.5)
+      
+   # plt.show()
 
 if __name__ == "__main__":
    main()
