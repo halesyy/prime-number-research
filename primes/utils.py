@@ -1,6 +1,7 @@
 
 import json
 from pathlib import Path
+from typing import Generator, TypeVar
 
 from primes.datasets.dataset_creator import eratosthenes
 
@@ -31,3 +32,9 @@ def better_range(start: float, end: float, step: float):
    while start <= end:
       yield start
       start += step
+
+T = TypeVar("T")
+
+def chunks(l: list[T], n: int) -> Generator[list[T], None, None]:
+   for i in range(0, len(l), n):
+      yield l[i:i + n]
