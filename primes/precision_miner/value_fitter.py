@@ -1,5 +1,5 @@
 
-from typing import Callable, Literal
+from typing import Callable, Literal, Self
 
 from primes.expressions.valuable import numba_x_log_x_y_ex, safe_numba_x_log_x_y_ex
 
@@ -79,6 +79,36 @@ def tweaker(
 ):
    pass
 
+VariableValueType = Literal["FITTING", "LINEAR"] | float
+VariablesType = dict[str, VariableValueType]
+
+class SingleTweakableFunction(object):
+   expression_func: Callable
+   variables: VariablesType
+
+   def __init__(self: Self, expression_func: Callable, variables: VariablesType):
+      self.expression_func = expression_func
+      self.variables = variables
+
+   def fitting_variable(self) -> str:
+      for var_name, var_type in self.variables.items():
+         if var_type == "FITTING":
+            return var_name
+      raise ValueError("No 'fitting' in the variable set")
+
+   def fit(self: Self):
+      pass
+
 if __name__ == "__main__":
-   y = value_fitter(n=5, tweaking="y", prime=11)
-   print(y)
+   # y = value_fitter(n=5, tweaking="y", prime=11)
+   # print(y)
+
+   SingleTweakableFunction(
+      expression_func=numba_x_log_x_y_ex,
+      variables={
+         "x": "LINEAR",
+         "y": 7,
+         "a": "FITTING",
+         "b": 1
+      }
+   )
