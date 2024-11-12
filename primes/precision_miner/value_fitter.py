@@ -1,8 +1,9 @@
 
-from typing import Callable, Literal, Self
+from typing import Callable, Literal, Self, Tuple
 import matplotlib.pyplot as plt
 from primes.datasets.dataset_creator import eratosthenes
 from primes.expressions.valuable import numba_x_log_x_y_ex, safe_numba_x_log_x_y_ex
+from primes.precision_miner.uq_analysis.deltas import series_difference_deltas
 
 # def sub_variables(n: float, tweaking: Literal["y", "a", "b"], value: float) -> dict[str, float]:
 #    variables: dict[str, float] = { 
@@ -155,6 +156,34 @@ class SingleTweakableFunction(object):
 
       return (fittest_T, fittest_output, steps)
 
+   @staticmethod
+   def determine_shotgun_fitness_direction(fitnesses: list[float | None]) -> Tuple[Literal[-1, 0, 1], Tuple[int, int] | None]:
+      """
+      1  = needs to keep ascending
+      0  = at min point area
+      -1 = too far, needs to go negative 
+      """
+      float_fitnesses = [f for f in fitnesses if isinstance(f, float)]
+      if len(fitnesses) <= 1:
+         raise ValueError(f"Hit an out-of-bound area with {len(fitnesses)} fitness/es")
+      
+      min_fitness = min(float_fitnesses)
+      max_fitness = max(float_fitnesses)
+
+      if min_fitness < 0 and max_fitness > 0:
+         # ... -1 0 1 ...
+         abs_fitnesses = sorted([(i, abs(f)) for i, f in enumerate(fitnesses) if f is not None], key=lambda v: v[1])
+         low_index = abs_fitnesses[0][0]
+         high_index = abs_fitnesses[1][0]
+         return 0, (low_index, high_index) # In the zone.
+      elif min_fitness < 0 and max_fitness < 0:
+         return -1, None # Too far negative - all values are negative!
+      
+      if float_fitnesses[0] > float_fitnesses[4]:
+         return 1, None # We're moving towards correctness.
+
+      raise ValueError(f"Weird unexpected state: {min_fitness} min, {max_fitness} max, fitnesses: {float_fitnesses}")
+
    def fit_shotgun(self, fit_to_value: float, linear: float | None = None):
       variables = self.create_base_fitness_variables(linear=linear)
 
@@ -165,8 +194,8 @@ class SingleTweakableFunction(object):
       T_varname = T_varnames[0]
 
       fittest_output = float("inf")
-      fittest_T = 0.00
-      current_T = 0.00
+      fittest_T: float = 0.00
+      current_T: float = 0.00
 
       step_size = 1.00
       direction = 1 # positive, or -1 negative
@@ -176,6 +205,7 @@ class SingleTweakableFunction(object):
       SHOT_SIZE = 5
 
       while True:
+         print(f"CurrentT: {current_T}, Fit To: {fit_to_value}, Fittest: {fittest_output}, Linear: {linear}")
 
          shot_values = []
          start_value = current_T
@@ -184,20 +214,100 @@ class SingleTweakableFunction(object):
             start_value += step_size * direction
          
          shot_results = [self.expression_func(**{**variables, T_varname: v}) for v in shot_values]
-         # gradient = 1 if shot_results[0] < shot_results[-1] else 0 # Assumptive linear gradient - could be improved
 
          fitnesses = [(fit_to_value - r if isinstance(r, (int, float)) else None) for r in shot_results]
+         min_fitnesses = min(shot_results)
+
+         first_fitness = fitnesses[0]
+         if all([f == first_fitness for f in fitnesses]):
+            print(f"Could not fit {fit_to_value} with linear {linear} with equation: all fitnesses from shotgun are same")
+            return fittest_T
 
          # We want to find the two values which are the range of the fittest value -
          # It might be the end of a series, meaning it wants to move more in the direction of the step size -
          # It might also be at the start of the series, meaning it wants to move AGAINST the direction - 
 
-         print(shot_values)
-         print(shot_results)
-         print(fitnesses)
+         shotgun_result, index_pair = self.determine_shotgun_fitness_direction(fitnesses)
 
-         input()  
+         if abs(fittest_output) < 0.001:
+            return fittest_T
 
+         # Delta check.
+         fitness_deltas = series_difference_deltas([f for f in fitnesses if f is not None])
+         # print(fitness_deltas)
+
+         max_delta = max(fitness_deltas)
+         if all([f == max_delta for f in fitness_deltas]):
+            # Ea step-size = fitness_delta[0]
+            fitness = fitnesses[0]
+            assert fitness is not None
+            delta = fitness_deltas[0]
+            ratio = fitness / delta * (step_size * -1)
+            if ratio == 0:
+               print(f"Could not fit {fit_to_value} with linear {linear} with equation: ratio is 0 for hop")
+               return current_T
+
+            current_T = current_T + ratio
+
+            result = self.expression_func(**{**variables, T_varname: current_T})
+            if abs(fit_to_value - result) < 0.0001:
+               return current_T
+            
+            # print("Using solid delta to reach best fitness to test next")
+            # distance = (fit_to_value - abs(fitness)) / abs(delta)
+            # step_size_direction = step_size * direction
+            # current_T = current_T + (distance * step_size_direction)
+
+            continue
+
+         if shotgun_result == 0:
+            # We're in the zone - we need to get the pairs, and 
+            assert index_pair is not None, "Index pair is None when shotgun_result == 0"
+            closest_index, overshot_index = index_pair
+            closest_fitness = fitnesses[closest_index]
+            assert closest_fitness is not None   
+
+            # print("Indexes:", closest_index, overshot_index)
+            test_fittest_output = abs(shot_results[closest_index])
+            if test_fittest_output < fittest_output:
+               fittest_T = shot_values[closest_index]
+               fittest_output = test_fittest_output
+
+            current_T = shot_values[closest_index]
+            step_size /= 10
+            direction = -1 if closest_fitness < 0 else 1
+            # print("New direction:", direction)
+         elif shotgun_result == 1:
+            # print("Moving as a shotgun result of 1, keep going")
+            # We're moving towards the correct rate. Nothing to do except keep stepping by the last result.
+            last_index = [i for i, f in enumerate(fitnesses) if f is not None][-1]
+            current_T = shot_values[last_index]
+
+            # Getting the ABS fitness to see if it beast the best.
+            last_fitness = fitnesses[last_index]
+            assert last_fitness is not None
+            abs_fitness = abs(last_fitness)
+
+            if abs_fitness < fittest_T:
+               fittest_T = shot_values[last_index]
+               fittest_output = abs_fitness
+
+            # fittest_output = 
+         elif shotgun_result == -1:
+            # We've got all negatives - something is wrong.
+            # raise ValueError("All are negative!")
+            print(f"Could not fit {fit_to_value} with linear {linear} with equation: all values are negative!")
+            return current_T
+
+         # print("Shot T's:", shot_values)
+         # print("Shot outputs:", shot_results)
+         # print("Fitnesses:", fitnesses)
+         # print(shotgun_result)
+         # print(current_T, fittest_T)
+         # print(fittest_T, fittest_output)
+         # input()  
+
+      raise ValueError("Could not find!")
 
 
 
@@ -229,8 +339,7 @@ if __name__ == "__main__":
       }
    )
 
-   primes = eratosthenes(100)
-   fitnesses = st.fit_linear_series([primes[10]], [10])
-   # steps = [t[2] for t in fitnesses]
-   # plt.plot(steps[5:])
-   # plt.show()
+   primes = eratosthenes(1_000_000)
+   for i, prime in enumerate(primes, start=1):
+      A = st.fit_shotgun(fit_to_value=prime, linear=i)
+      print(A)
