@@ -3,7 +3,7 @@ from typing import Callable, Literal, Self, Tuple
 import matplotlib.pyplot as plt
 from primes.datasets.dataset_creator import eratosthenes
 from primes.expressions.valuable import numba_x_log_x_y_ex, safe_numba_x_log_x_y_ex
-from primes.precision_miner.uq_analysis.deltas import series_difference_deltas
+from primes.precision_miner.uq_analysis.deltas import series_difference_deltas, series_multiplication_deltas
 
 # def sub_variables(n: float, tweaking: Literal["y", "a", "b"], value: float) -> dict[str, float]:
 #    variables: dict[str, float] = { 
@@ -216,7 +216,7 @@ class SingleTweakableFunction(object):
          shot_results = [self.expression_func(**{**variables, T_varname: v}) for v in shot_values]
 
          fitnesses = [(fit_to_value - r if isinstance(r, (int, float)) else None) for r in shot_results]
-         min_fitnesses = min(shot_results)
+         min_fitnesses = min([v for v in shot_results if isinstance(v, (float, int))])
 
          first_fitness = fitnesses[0]
          if all([f == first_fitness for f in fitnesses]):
@@ -228,13 +228,14 @@ class SingleTweakableFunction(object):
          # It might also be at the start of the series, meaning it wants to move AGAINST the direction - 
 
          shotgun_result, index_pair = self.determine_shotgun_fitness_direction(fitnesses)
+         
 
          if abs(fittest_output) < 0.001:
             return fittest_T
 
          # Delta check.
          fitness_deltas = series_difference_deltas([f for f in fitnesses if f is not None])
-         # print(fitness_deltas)
+         input()
 
          max_delta = max(fitness_deltas)
          if all([f == max_delta for f in fitness_deltas]):
@@ -330,16 +331,23 @@ if __name__ == "__main__":
    # print(y)
 
    st = SingleTweakableFunction(
-      expression_func=numba_x_log_x_y_ex,
+      expression_func=safe_numba_x_log_x_y_ex,
       variables={
+         # "x": "LINEAR",
+         # "y": 7,
+         # "a": "FITTING",
+         # "b": 1
+
          "x": "LINEAR",
-         "y": 7,
-         "a": "FITTING",
+         "y": "FITTING",
+         "a": 1,
          "b": 1
       }
    )
 
    primes = eratosthenes(1_000_000)
-   for i, prime in enumerate(primes, start=1):
-      A = st.fit_shotgun(fit_to_value=prime, linear=i)
-      print(A)
+   # for i, prime in enumerate(primes, start=1):
+   #    A = st.fit_shotgun(fit_to_value=prime, linear=i)
+   #    print(A)
+
+   st.fit_shotgun(fit_to_value=primes[50], linear=50)
