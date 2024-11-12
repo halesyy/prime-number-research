@@ -188,7 +188,9 @@ class SingleTweakableFunction(object):
 
          fitnesses = [(fit_to_value - r if isinstance(r, (int, float)) else None) for r in shot_results]
 
-         # We want to find the two values which are the range of the fittest value.
+         # We want to find the two values which are the range of the fittest value -
+         # It might be the end of a series, meaning it wants to move more in the direction of the step size -
+         # It might also be at the start of the series, meaning it wants to move AGAINST the direction - 
 
          print(shot_values)
          print(shot_results)
