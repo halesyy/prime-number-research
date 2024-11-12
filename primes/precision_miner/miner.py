@@ -136,6 +136,7 @@ def dynamic_tweaker(
       if fitness_rel > 0 and fitness_rel < fittest:
          fittest = fitness_rel
          fittest_T = current_T
+         
       if fitness_rel == 0 or (fitness_rel <= 0.001 and fitness_rel > 0):
          break
       elif fitness < 0.000001:

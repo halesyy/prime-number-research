@@ -5,7 +5,7 @@ from pathlib import Path
 # https://t5k.org/nthprime/ - nth prime
 # http://www.primos.mat.br/2T_en.html - dataset of primes
 
-def eratosthenes(n: int) -> list[int]:
+def eratosthenes(n: int) -> list[float]:
    sieve: list[bool] = [True] * (n+1)
    ps = []
    c = 0
