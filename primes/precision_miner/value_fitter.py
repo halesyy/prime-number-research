@@ -1,5 +1,7 @@
 
+import os
 import sys
+from time import perf_counter
 from typing import Callable, Literal, Self, Tuple
 import matplotlib.pyplot as plt
 from primes.datasets.dataset_creator import eratosthenes
@@ -169,6 +171,8 @@ class SingleTweakableFunction(object):
       0  = at min point area
       -1 = too far, needs to go negative 
       """
+      group_size = len(fitnesses)
+
       float_fitnesses = [f for f in fitnesses if isinstance(f, float)]
       if len(fitnesses) <= 1:
          raise ValueError(f"Hit an out-of-bound area with {len(fitnesses)} fitness/es")
@@ -178,11 +182,43 @@ class SingleTweakableFunction(object):
 
       # Need to check in negative and positive terms first.
       if min_fitness < 0 and max_fitness > 0:
+         # Todo - need to write a better algorithm which does not mix up and pick
+         # todo   the two lowest abs values, as they can be not crossing over the 0
+         # todo   barrier. We instead need closest positives, and closest negatives.
+         # todo - DONE!
          # ... -1 0 1 ...
-         abs_fitnesses = sorted([(i, abs(f)) for i, f in enumerate(fitnesses) if f is not None], key=lambda v: v[1])
-         low_index = abs_fitnesses[0][0]
-         high_index = abs_fitnesses[1][0]
-         return 0, (low_index, high_index) # In the zone.
+         positive_fitnesses = [(i, abs(f)) for i, f in enumerate(fitnesses) if f is not None and f > 0]
+         negative_fitnesses = [(i, abs(f)) for i, f in enumerate(fitnesses) if f is not None and f < 0]
+
+         best_positive_fitness_index, best_positive_fitness = sorted(positive_fitnesses, key=lambda v: v[1])[0]
+         best_negative_fitness_index, best_negative_fitness = sorted(negative_fitnesses, key=lambda v: v[1])[0]
+
+         if best_positive_fitness < best_negative_fitness:
+            return 0, (best_positive_fitness_index, best_negative_fitness_index)
+         elif best_negative_fitness < best_positive_fitness:
+            return 0, (best_positive_fitness_index, best_negative_fitness_index)
+
+
+         # input(f"{best_positive_fitness_index} {best_positive_fitness}")
+         # input(f"{best_negative_fitness_index} {best_negative_fitness}")
+
+
+         # abs_fitnesses = sorted([(i, abs(f)) for i, f in enumerate(fitnesses) if f is not None], key=lambda v: v[1])
+         # closest_fitness = abs_fitnesses[0]
+
+
+         # low_index = closest_fitness[0]
+         # if closest_fitness[1] < 0 and fitnesses[low_index-1] > 0:
+         #    return 0, (low_index, low_index-1)
+         # elif closest_fitness[1] > 0 and fitnesses[low_index-1] < 0:
+         #    return 0, (low_index, low_index-1)
+         # elif closest_fitness[1] > 0 and fitnesses[low_index+1] < 0:
+         #    return 0, (low_index, low_index+1)
+         # elif closest_fitness[1] < 0 and fitnesses[low_index+1] > 0:
+         #    return 0, (low_index, low_index+1)
+
+         # high_index = abs_fitnesses[1][0]
+         # return 0, (low_index, high_index) # In the zone.
       
       abs_fitnesses = [abs(f) for f in float_fitnesses]
       
@@ -235,7 +271,7 @@ class SingleTweakableFunction(object):
          logger("Results..:", shot_results)
          logger("Fitnesses:", fitnesses)
 
-         min_fitnesses = min([v for v in shot_results if isinstance(v, (float, int))])
+         # min_fitnesses = min([v for v in shot_results if isinstance(v, (float, int))])
 
          first_fitness = fitnesses[0]
          if all([f == first_fitness for f in fitnesses]):
@@ -248,16 +284,21 @@ class SingleTweakableFunction(object):
 
          shotgun_result, index_pair = self.determine_shotgun_fitness_direction(fitnesses)
          logger(f"Shot result:", shotgun_result)
-         input()
+         # input()
 
          if abs(fittest_output) < 0.001:
             return fittest_T
+         
+         # Test for 0-fitness.
+         for i, fitness in enumerate(fitnesses):
+            if fitness == 0.00:
+               return shot_values[i]
 
          # Delta check.
          # fitness_deltas = series_difference_deltas([f for f in fitnesses if f is not None])
-         # input()
+         # # input()
 
-         # Todo - include this as an option later.
+         # # Todo - include this as an option later.
          # max_delta = max(fitness_deltas)
          # if all([f == max_delta for f in fitness_deltas]):
          #    # Ea step-size = fitness_delta[0]
@@ -296,10 +337,9 @@ class SingleTweakableFunction(object):
             assert overshot_fitness is not None
             # fitness_d = 1 if closest_fitness > overshot_fitness else -1
 
-
-            if abs(shot_results[closest_index]) < fittest_output:
+            if abs(closest_fitness) < fittest_output:
                fittest_T = shot_values[closest_index]
-               fittest_output = abs(shot_results[closest_index])
+               fittest_output = abs(closest_fitness)
 
             current_T = shot_values[closest_index]
             step_size /= 10
@@ -307,7 +347,7 @@ class SingleTweakableFunction(object):
             logger(f"Closest fitness is {fitnesses[closest_index]} (idx {closest_index}) to {fitnesses[overshot_index]} (idx {overshot_index})")
             logger(f"PD  = {direction}")
             logger(f"PAD = {pair_dir}")
-            input()
+            # input()
             # logger(f"FD  = {fitness_d}")
 
 
@@ -330,7 +370,8 @@ class SingleTweakableFunction(object):
             assert last_fitness is not None
             abs_fitness = abs(last_fitness)
 
-            if abs_fitness < fittest_T:
+            # print(abs_fitness, fittest_output)
+            if abs_fitness < fittest_output:
                fittest_T = shot_values[last_index]
                fittest_output = abs_fitness
 
@@ -339,6 +380,7 @@ class SingleTweakableFunction(object):
             # We've got all negatives - something is wrong.
             # raise ValueError("All are negative!")
             print(f"Could not fit {fit_to_value} with linear {linear} with equation: stepping away from a correct fitness!")
+            # input()
             return current_T
 
          # print("Shot T's:", shot_values)
@@ -385,7 +427,17 @@ if __name__ == "__main__":
 
    a_or_y = "y" if "y" in sys.argv else "a"
    print(f"Fitting to: {a_or_y}")
+
+
    tweaker = SingleTweakableFunction(expression_func=safe_numba_x_log_x_y_ex, variables=a_fitting if a_or_y == "a" else y_fitting)
-   primes = eratosthenes(1000)
-   res = tweaker.fit_shotgun(fit_to_value=primes[50], linear=50, logger=print)
-   print(res)
+   
+   start = perf_counter()
+   primes = eratosthenes(1_000_000)
+   ds = []
+   for x, prime in enumerate(primes, start=1):
+      # os.system("clear")
+      res = tweaker.fit_shotgun(fit_to_value=prime, linear=x)
+      ds.append(res)
+   print(perf_counter() - start)
+   plt.plot(ds[10:])
+   plt.show()
