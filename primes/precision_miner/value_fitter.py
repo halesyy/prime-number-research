@@ -1,4 +1,5 @@
 
+import sys
 from typing import Callable, Literal, Self, Tuple
 import matplotlib.pyplot as plt
 from primes.datasets.dataset_creator import eratosthenes
@@ -44,7 +45,11 @@ class SingleTweakableFunction(object):
          return None
       return fitting_var_names
    
-
+   def fitting_variable(self) -> str:
+      variables = self.fitting_variables()
+      assert variables is not None and len(variables) == 1, f"Bad number of fitting variables: {variables}"
+      return variables[0]
+   
    def linear_variable(self) -> str | None:
       for var_name, var_type in self.variables.items():
          if var_type == "LINEAR":
@@ -159,7 +164,8 @@ class SingleTweakableFunction(object):
    @staticmethod
    def determine_shotgun_fitness_direction(fitnesses: list[float | None]) -> Tuple[Literal[-1, 0, 1], Tuple[int, int] | None]:
       """
-      1  = needs to keep ascending
+      todo - refac logic.
+      1  = needs to keep shooting (moving towards fittness)
       0  = at min point area
       -1 = too far, needs to go negative 
       """
@@ -170,32 +176,46 @@ class SingleTweakableFunction(object):
       min_fitness = min(float_fitnesses)
       max_fitness = max(float_fitnesses)
 
+      # Need to check in negative and positive terms first.
       if min_fitness < 0 and max_fitness > 0:
          # ... -1 0 1 ...
          abs_fitnesses = sorted([(i, abs(f)) for i, f in enumerate(fitnesses) if f is not None], key=lambda v: v[1])
          low_index = abs_fitnesses[0][0]
          high_index = abs_fitnesses[1][0]
          return 0, (low_index, high_index) # In the zone.
-      elif min_fitness < 0 and max_fitness < 0:
-         return -1, None # Too far negative - all values are negative!
       
-      if float_fitnesses[0] > float_fitnesses[4]:
-         return 1, None # We're moving towards correctness.
+      abs_fitnesses = [abs(f) for f in float_fitnesses]
+      
+      if abs_fitnesses[0] < abs_fitnesses[1]:
+         return -1, None
+      
+      return 1, None
+      
+
+
+
+      # elif min_fitness < 0 and max_fitness < 0:
+      #    return -1, None # Too far negative - all values are negative!
+      
+      # if float_fitnesses[0] > float_fitnesses[4]:
+      #    return 1, None # We're moving towards correctness.
 
       raise ValueError(f"Weird unexpected state: {min_fitness} min, {max_fitness} max, fitnesses: {float_fitnesses}")
 
-   def fit_shotgun(self, fit_to_value: float, linear: float | None = None):
+   def fit_shotgun(
+      self, 
+      fit_to_value: float, 
+      linear: float | None = None, 
+      logger: Callable = lambda *s: None
+   ):
       variables = self.create_base_fitness_variables(linear=linear)
 
       # What var are we fitting as T.
-      T_varnames = self.fitting_variables()
-      if T_varnames is None or len(T_varnames) != 1:
-         raise ValueError("More than 1 fitting value not current supported")
-      T_varname = T_varnames[0]
+      T_varname = self.fitting_variable()
 
       fittest_output = float("inf")
       fittest_T: float = 0.00
-      current_T: float = 0.00
+      current_T: float = -2.00 # so we can do first shot negative incase
 
       step_size = 1.00
       direction = 1 # positive, or -1 negative
@@ -205,22 +225,21 @@ class SingleTweakableFunction(object):
       SHOT_SIZE = 5
 
       while True:
-         print(f"CurrentT: {current_T}, Fit To: {fit_to_value}, Fittest: {fittest_output}, Linear: {linear}")
+         logger(f"CurrentT: {current_T}, Fit To: {fit_to_value}, Fittest: {fittest_output}, Linear: {linear}")
 
-         shot_values = []
-         start_value = current_T
-         for _ in range(SHOT_SIZE):
-            shot_values.append(start_value)
-            start_value += step_size * direction
-         
+         shot_values = [current_T + (i*step_size*direction) for i in range(SHOT_SIZE)]
          shot_results = [self.expression_func(**{**variables, T_varname: v}) for v in shot_values]
-
          fitnesses = [(fit_to_value - r if isinstance(r, (int, float)) else None) for r in shot_results]
+
+         logger(f"Shots....: {shot_values} ({direction})")
+         logger("Results..:", shot_results)
+         logger("Fitnesses:", fitnesses)
+
          min_fitnesses = min([v for v in shot_results if isinstance(v, (float, int))])
 
          first_fitness = fitnesses[0]
          if all([f == first_fitness for f in fitnesses]):
-            print(f"Could not fit {fit_to_value} with linear {linear} with equation: all fitnesses from shotgun are same")
+            logger(f"Could not fit {fit_to_value} with linear {linear} with equation: all fitnesses from shotgun are same")
             return fittest_T
 
          # We want to find the two values which are the range of the fittest value -
@@ -228,56 +247,78 @@ class SingleTweakableFunction(object):
          # It might also be at the start of the series, meaning it wants to move AGAINST the direction - 
 
          shotgun_result, index_pair = self.determine_shotgun_fitness_direction(fitnesses)
-         
+         logger(f"Shot result:", shotgun_result)
+         input()
 
          if abs(fittest_output) < 0.001:
             return fittest_T
 
          # Delta check.
-         fitness_deltas = series_difference_deltas([f for f in fitnesses if f is not None])
-         input()
+         # fitness_deltas = series_difference_deltas([f for f in fitnesses if f is not None])
+         # input()
 
-         max_delta = max(fitness_deltas)
-         if all([f == max_delta for f in fitness_deltas]):
-            # Ea step-size = fitness_delta[0]
-            fitness = fitnesses[0]
-            assert fitness is not None
-            delta = fitness_deltas[0]
-            ratio = fitness / delta * (step_size * -1)
-            if ratio == 0:
-               print(f"Could not fit {fit_to_value} with linear {linear} with equation: ratio is 0 for hop")
-               return current_T
+         # Todo - include this as an option later.
+         # max_delta = max(fitness_deltas)
+         # if all([f == max_delta for f in fitness_deltas]):
+         #    # Ea step-size = fitness_delta[0]
+         #    fitness = fitnesses[0]
+         #    assert fitness is not None
+         #    delta = fitness_deltas[0]
+         #    ratio = fitness / delta * (step_size * -1)
+         #    if ratio == 0:
+         #       print(f"Could not fit {fit_to_value} with linear {linear} with equation: ratio is 0 for hop")
+         #       return current_T
 
-            current_T = current_T + ratio
+         #    current_T = current_T + ratio
 
-            result = self.expression_func(**{**variables, T_varname: current_T})
-            if abs(fit_to_value - result) < 0.0001:
-               return current_T
+         #    result = self.expression_func(**{**variables, T_varname: current_T})
+         #    if abs(fit_to_value - result) < 0.0001:
+         #       return current_T
             
-            # print("Using solid delta to reach best fitness to test next")
-            # distance = (fit_to_value - abs(fitness)) / abs(delta)
-            # step_size_direction = step_size * direction
-            # current_T = current_T + (distance * step_size_direction)
+         #    # print("Using solid delta to reach best fitness to test next")
+         #    # distance = (fit_to_value - abs(fitness)) / abs(delta)
+         #    # step_size_direction = step_size * direction
+         #    # current_T = current_T + (distance * step_size_direction)
 
-            continue
+         #    continue
 
          if shotgun_result == 0:
             # We're in the zone - we need to get the pairs, and 
             assert index_pair is not None, "Index pair is None when shotgun_result == 0"
-            closest_index, overshot_index = index_pair
-            closest_fitness = fitnesses[closest_index]
-            assert closest_fitness is not None   
 
-            # print("Indexes:", closest_index, overshot_index)
-            test_fittest_output = abs(shot_results[closest_index])
-            if test_fittest_output < fittest_output:
+            closest_index, overshot_index = index_pair
+            pair_dir = 1 if closest_index < overshot_index else -1 # TO the direction
+
+
+            closest_fitness = fitnesses[closest_index]
+            overshot_fitness = fitnesses[overshot_index]
+            assert closest_fitness is not None   
+            assert overshot_fitness is not None
+            # fitness_d = 1 if closest_fitness > overshot_fitness else -1
+
+
+            if abs(shot_results[closest_index]) < fittest_output:
                fittest_T = shot_values[closest_index]
-               fittest_output = test_fittest_output
+               fittest_output = abs(shot_results[closest_index])
 
             current_T = shot_values[closest_index]
             step_size /= 10
-            direction = -1 if closest_fitness < 0 else 1
-            # print("New direction:", direction)
+
+            logger(f"Closest fitness is {fitnesses[closest_index]} (idx {closest_index}) to {fitnesses[overshot_index]} (idx {overshot_index})")
+            logger(f"PD  = {direction}")
+            logger(f"PAD = {pair_dir}")
+            input()
+            # logger(f"FD  = {fitness_d}")
+
+
+            # new_direction = -1 if closest_fitness > 0 else 1
+            # direction = new_direction
+
+            if pair_dir == -1:
+               direction *= -1
+               logger("New direction:", direction)
+
+
          elif shotgun_result == 1:
             # print("Moving as a shotgun result of 1, keep going")
             # We're moving towards the correct rate. Nothing to do except keep stepping by the last result.
@@ -297,7 +338,7 @@ class SingleTweakableFunction(object):
          elif shotgun_result == -1:
             # We've got all negatives - something is wrong.
             # raise ValueError("All are negative!")
-            print(f"Could not fit {fit_to_value} with linear {linear} with equation: all values are negative!")
+            print(f"Could not fit {fit_to_value} with linear {linear} with equation: stepping away from a correct fitness!")
             return current_T
 
          # print("Shot T's:", shot_values)
@@ -329,25 +370,22 @@ class SingleTweakableFunction(object):
 if __name__ == "__main__":
    # y = value_fitter(n=5, tweaking="y", prime=11)
    # print(y)
+   a_fitting = {
+      "x": "LINEAR",
+      "y": 7,
+      "a": "FITTING",
+      "b": 1
+   }
+   y_fitting = {
+      "x": "LINEAR",
+      "y": "FITTING",
+      "a": 1,
+      "b": 1
+   }
 
-   st = SingleTweakableFunction(
-      expression_func=safe_numba_x_log_x_y_ex,
-      variables={
-         # "x": "LINEAR",
-         # "y": 7,
-         # "a": "FITTING",
-         # "b": 1
-
-         "x": "LINEAR",
-         "y": "FITTING",
-         "a": 1,
-         "b": 1
-      }
-   )
-
-   primes = eratosthenes(1_000_000)
-   # for i, prime in enumerate(primes, start=1):
-   #    A = st.fit_shotgun(fit_to_value=prime, linear=i)
-   #    print(A)
-
-   st.fit_shotgun(fit_to_value=primes[50], linear=50)
+   a_or_y = "y" if "y" in sys.argv else "a"
+   print(f"Fitting to: {a_or_y}")
+   tweaker = SingleTweakableFunction(expression_func=safe_numba_x_log_x_y_ex, variables=a_fitting if a_or_y == "a" else y_fitting)
+   primes = eratosthenes(1000)
+   res = tweaker.fit_shotgun(fit_to_value=primes[50], linear=50, logger=print)
+   print(res)
