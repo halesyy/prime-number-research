@@ -5,7 +5,7 @@ from time import perf_counter
 from typing import Callable, Literal, Self, Tuple
 import matplotlib.pyplot as plt
 from primes.datasets.dataset_creator import eratosthenes
-from primes.expressions.valuable import numba_x_log_x_y_ex, safe_numba_x_log_x_y_ex
+from primes.expressions.valuable import numba_x_log_x_y_ex, safe_numba_x_log_x_y_ex, safe_numba_xay_log_xay_ex
 from primes.precision_miner.uq_analysis.deltas import series_difference_deltas, series_multiplication_deltas
 
 # def sub_variables(n: float, tweaking: Literal["y", "a", "b"], value: float) -> dict[str, float]:
@@ -360,6 +360,8 @@ class SingleTweakableFunction(object):
 
 
          elif shotgun_result == 1:
+            # todo - it's possible that the last is not the fittest - we need to do a check, as
+            # todo   with the ya check, it's not working
             # print("Moving as a shotgun result of 1, keep going")
             # We're moving towards the correct rate. Nothing to do except keep stepping by the last result.
             last_index = [i for i, f in enumerate(fitnesses) if f is not None][-1]
@@ -424,20 +426,25 @@ if __name__ == "__main__":
       "a": 1,
       "b": 1
    }
+   ay_fitting = {
+      "x": "LINEAR",
+      "ay": "FITTING",
+      "b": 1
+   }
 
-   a_or_y = "y" if "y" in sys.argv else "a"
-   print(f"Fitting to: {a_or_y}")
+   # a_or_y = "y" if "y" in sys.argv else "a"
+   # print(f"Fitting to: {a_or_y}")
 
-
-   tweaker = SingleTweakableFunction(expression_func=safe_numba_x_log_x_y_ex, variables=a_fitting if a_or_y == "a" else y_fitting)
+   tweaker = SingleTweakableFunction(expression_func=safe_numba_xay_log_xay_ex, variables=ay_fitting)
    
    start = perf_counter()
    primes = eratosthenes(1_000_000)
    ds = []
    for x, prime in enumerate(primes, start=1):
-      # os.system("clear")
-      res = tweaker.fit_shotgun(fit_to_value=prime, linear=x)
-      ds.append(res)
+      if x == 10:
+         ay = tweaker.fit_shotgun(fit_to_value=prime, linear=x, logger=print)
+      # ds.append(ay)
    print(perf_counter() - start)
-   plt.plot(ds[10:])
-   plt.show()
+   print(ds[0:10])
+   # plt.plot(ds[10:])
+   # plt.show()
